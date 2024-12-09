@@ -1,54 +1,31 @@
-# Use Ubuntu latest as base image
-FROM ubuntu:latest
+# 빌드 스테이지
+FROM python:3.11-slim as builder
 
-# Prevent timezone prompt during package installation
-ENV DEBIAN_FRONTEND=noninteractive \
-    TZ=Asia/Seoul
+WORKDIR /app
 
-# Set environment variables for Python and Poetry
-ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1 \
-    POETRY_VERSION=1.7.1 \
-    POETRY_HOME="/opt/poetry" \
-    POETRY_VIRTUALENVS_IN_PROJECT=true \
-    POETRY_NO_INTERACTION=1 \
-    PYTHON_VERSION=3.11
+# 필요한 패키지 설치
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Set work directory
-WORKDIR /
+# 운영 스테이지
+FROM python:3.11-slim
 
-# Install system dependencies and Python
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    software-properties-common \
-    curl \
-    build-essential \
-    git \
-    && add-apt-repository ppa:deadsnakes/ppa \
-    && apt-get update \
-    && apt-get install -y --no-install-recommends \
-    python${PYTHON_VERSION} \
-    python${PYTHON_VERSION}-dev \
-    python${PYTHON_VERSION}-venv \
-    python3-pip \
-    && ln -s /usr/bin/python${PYTHON_VERSION} /usr/bin/python3 \
-    && ln -s /usr/bin/python${PYTHON_VERSION} /usr/bin/python \
-    && rm -rf /var/lib/apt/lists/*
+WORKDIR /app
 
-# Install Poetry
-RUN curl -sSL https://install.python-poetry.org | python3 -
-ENV PATH="$POETRY_HOME/bin:$PATH"
+# 빌드 스테이지에서 설치된 Python 패키지 복사
+COPY --from=builder /usr/local/lib/python3.11/site-packages/ /usr/local/lib/python3.11/site-packages/
+COPY --from=builder /usr/local/bin/ /usr/local/bin/
 
-# Copy poetry configuration files
-COPY pyproject.toml poetry.lock* ./
+# 애플리케이션 복사
+COPY app ./app
 
-# Install dependencies
-RUN poetry install --no-root --no-dev
+# 환경 변수 설정
+ENV FLASK_APP=app/app.py \
+    FLASK_ENV=production \
+    PYTHONUNBUFFERED=1
 
-# Copy project files
-COPY ./app /app
+# 80 포트 노출
+EXPOSE 80
 
-# Install project
-RUN poetry install --no-dev
-
-# Command to run the application
-CMD ["poetry", "run", "python", "-m", "app.main"]
+# Gunicorn으로 애플리케이션 실행
+CMD ["gunicorn", "--bind", "0.0.0.0:80", "--workers", "4", "--access-logfile", "-", "app.app:app"]
