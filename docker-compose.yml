@@ -3,18 +3,53 @@ version: '3.8'
 services:
   web:
     build: .
-    volumes:
-      - ./app:/app/app
+    restart: unless-stopped
     ports:
       - "80:80"
+    volumes:
+      - .:/app
+      - static_volume:/app/staticfiles
+      - media_volume:/app/media
     environment:
-      - FLASK_ENV=production
-      - FLASK_DEBUG=0
-      - PYTHONUNBUFFERED=1
-    restart: unless-stopped
+      - DJANGO_SETTINGS_MODULE=aurora.settings
+      - DJANGO_SECRET_KEY=your-secret-key-here
+      - DJANGO_DEBUG=False
+      - DJANGO_ALLOWED_HOSTS=*
+      - MYSQL_DATABASE=aurora_db
+      - MYSQL_USER=aurora_user
+      - MYSQL_PASSWORD=aurora_password
+      - MYSQL_HOST=db
+      # CORS settings
+      - DJANGO_CORS_ALLOW_ALL_ORIGINS=True
+      - DJANGO_CORS_ALLOW_CREDENTIALS=True
+      - DJANGO_CORS_ALLOWED_ORIGINS=http://localhost,http://127.0.0.1
+      - DJANGO_SECURE_CROSS_ORIGIN_OPENER_POLICY=same-origin-allow-popups
+    depends_on:
+      db:
+        condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:80/api/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:80/health/"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
+
+  db:
+    image: mariadb:10.11
+    volumes:
+      - mariadb_data:/var/lib/mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=rootpassword
+      - MYSQL_DATABASE=aurora_db
+      - MYSQL_USER=aurora_user
+      - MYSQL_PASSWORD=aurora_password
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "aurora_user", "-paurora_password"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  mariadb_data:
+  static_volume:
+  media_volume:
