@@ -1,5 +1,5 @@
 # 빌드 스테이지
-FROM python:3.11-slim as builder
+FROM python:3.11-slim AS builder
 
 WORKDIR /app
 
@@ -38,7 +38,7 @@ RUN echo '#!/bin/sh' > /app/docker-entrypoint.sh && \
     echo 'echo "Collecting static files..."' >> /app/docker-entrypoint.sh && \
     echo 'python manage.py collectstatic --noinput' >> /app/docker-entrypoint.sh && \
     echo 'echo "Starting Gunicorn..."' >> /app/docker-entrypoint.sh && \
-    echo 'exec gunicorn aurora.wsgi:application --bind 0.0.0.0:80' >> /app/docker-entrypoint.sh && \
+    echo 'exec gunicorn aurora.wsgi:application --bind 0.0.0.0:80 --timeout 120 --workers 3 --threads 3 --worker-class gthread' >> /app/docker-entrypoint.sh && \
     chmod +x /app/docker-entrypoint.sh
 
 # 환경 변수 설정
