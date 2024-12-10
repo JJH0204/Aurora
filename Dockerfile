@@ -32,11 +32,20 @@ COPY --from=builder /usr/local/bin/ /usr/local/bin/
 COPY . .
 
 # 시작 스크립트 생성
-RUN echo '#!/bin/sh' > /app/docker-entrypoint.sh && \
-    echo 'python manage.py migrate --noinput' >> /app/docker-entrypoint.sh && \
-    echo 'python manage.py collectstatic --noinput' >> /app/docker-entrypoint.sh && \
-    echo 'gunicorn aurora.wsgi:application --bind 0.0.0.0:80' >> /app/docker-entrypoint.sh && \
-    chmod +x /app/docker-entrypoint.sh
+RUN echo "#!/bin/sh" > /app/docker-entrypoint.sh && \
+    echo "set -e" >> /app/docker-entrypoint.sh && \
+    echo "" >> /app/docker-entrypoint.sh && \
+    echo "echo 'Running migrations...'" >> /app/docker-entrypoint.sh && \
+    echo "python manage.py migrate --noinput" >> /app/docker-entrypoint.sh && \
+    echo "" >> /app/docker-entrypoint.sh && \
+    echo "echo 'Collecting static files...'" >> /app/docker-entrypoint.sh && \
+    echo "python manage.py collectstatic --noinput" >> /app/docker-entrypoint.sh && \
+    echo "" >> /app/docker-entrypoint.sh && \
+    echo "echo 'Starting Gunicorn...'" >> /app/docker-entrypoint.sh && \
+    echo "exec gunicorn aurora.wsgi:application --bind 0.0.0.0:80" >> /app/docker-entrypoint.sh
+
+# 시작 스크립트에 실행 권한 부여
+RUN chmod +x /app/docker-entrypoint.sh
 
 # 환경 변수 설정
 ENV PYTHONUNBUFFERED=1 \
@@ -46,4 +55,4 @@ ENV PYTHONUNBUFFERED=1 \
 EXPOSE 80
 
 # 시작 스크립트 실행
-CMD ["/app/docker-entrypoint.sh"]
+CMD ["sh", "/app/docker-entrypoint.sh"]
