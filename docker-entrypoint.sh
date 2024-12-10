@@ -1,8 +1,6 @@
 #!/bin/sh
-set -e
 
 echo "Running migrations..."
-python manage.py makemigrations accounts posts core
 python manage.py migrate
 
 echo "Collecting static files..."
