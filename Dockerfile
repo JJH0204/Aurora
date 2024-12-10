@@ -22,6 +22,7 @@ WORKDIR /app
 # MySQL 클라이언트 라이브러리 설치
 RUN apt-get update && apt-get install -y \
     default-libmysqlclient-dev \
+    dos2unix \
     && rm -rf /var/lib/apt/lists/*
 
 # 빌드 스테이지에서 설치된 Python 패키지 복사
@@ -32,13 +33,10 @@ COPY --from=builder /usr/local/bin/ /usr/local/bin/
 COPY . .
 
 # 시작 스크립트 생성
-RUN echo '#!/bin/sh' > /app/docker-entrypoint.sh && \
-    echo 'echo "Running migrations..."' >> /app/docker-entrypoint.sh && \
-    echo 'python manage.py migrate' >> /app/docker-entrypoint.sh && \
-    echo 'echo "Collecting static files..."' >> /app/docker-entrypoint.sh && \
-    echo 'python manage.py collectstatic --noinput' >> /app/docker-entrypoint.sh && \
-    echo 'echo "Starting Gunicorn..."' >> /app/docker-entrypoint.sh && \
-    echo 'exec gunicorn aurora.wsgi:application --bind 0.0.0.0:80 --timeout 120 --workers 3 --threads 3 --worker-class gthread' >> /app/docker-entrypoint.sh && \
+COPY docker-entrypoint.sh /app/docker-entrypoint.sh
+
+# 시작 스크립트에 실행 권한 부여
+RUN dos2unix /app/docker-entrypoint.sh && \
     chmod +x /app/docker-entrypoint.sh
 
 # 환경 변수 설정
