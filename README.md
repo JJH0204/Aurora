@@ -90,15 +90,15 @@ Aurora/
 1. 환경 설정
 ```bash
 # 프로젝트 클론
-git clone <repository-url>
-cd Aurora
+$ git clone <repository-url>
+$ cd Aurora
 ```
 
 2. Docker 실행
 ```bash
 # 컨테이너 빌드 및 실행
-docker compose build
-docker compose up -d
+$ docker build -t krjaeh0/aurora:latest .
+$ docker run -d -p 80:80 --name aurora-app krjaeh0/aurora:latest
 ```
 
 3. 접속
