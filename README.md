@@ -13,7 +13,8 @@
 
 ## Project Overview
 
-Aurora는 사이버 보안 교육을 위한 취약한 웹 애플리케이션 플랫폼입니다. Django 웹 프레임워크를 기반으로 하며, MariaDB를 데이터베이스로 사용하고 Docker를 통해 컨테이너화되어 있습니다.
+Aurora는 사이버 보안 교육을 위한 취약한 웹 애플리케이션 플랫폼입니다.  
+Django 웹 프레임워크를 기반으로 하며, MariaDB를 데이터베이스로 사용하고 Docker를 통해 컨테이너화되어 있습니다.
 
 ### 🎯 프로젝트 목표
 ![alt text](image-2.png)
@@ -38,7 +39,6 @@ Aurora는 사이버 보안 교육을 위한 취약한 웹 애플리케이션 플
 **대회 요구사항**
 1. **웹 서버**
    - 최소 10개 이상의 취약점 포함
-   - PHP 사용 제외
 
 2. **모바일 앱**
    - 취약한 안드로이드 앱 개발
@@ -67,45 +67,44 @@ Aurora는 사이버 보안 교육을 위한 취약한 웹 애플리케이션 플
 | Web Server | ![Gunicorn](https://img.shields.io/badge/Gunicorn-21.2-green?logo=gunicorn) ![Whitenoise](https://img.shields.io/badge/Whitenoise-6.6-lightgrey) |
 
 ## project-structure
-![alt text](image-1.png)
 ```
 Aurora/
-├── apps/                  # → 애플리케이션 디렉토리
-│   ├── accounts/          # → 사용자 계정 관리
-│   ├── core/              # → 핵심 기능
-│   └── posts/             # → 게시물 관리
-├── aurora/                # → 프로젝트 설정
-├── templates/             # → HTML 템플릿
-├── static/                # → 정적 파일
-├── media/                 # → 사용자 업로드 파일
-├── docker-compose.yml     # → Docker 구성
+├── Aurora/               # → Django 프로젝트 메인 디렉토리(프런트)
+├── Django/               # → Django 애플리케이션 디렉토리(서버)
+├── Maria/                # → MariaDB 관련 설정(데이터베이스)
+├── .github/              # → GitHub 워크플로우 설정
+├── manage.py             # → Django 프로젝트 관리
+├── requirements.txt      # → Python 의존성
 ├── Dockerfile             # → Docker 이미지 정의
-└── requirements.txt       # → Python 의존성
+├── docker-entrypoint.sh   # → Docker 진입점 스크립트
+├── run.bat                # → Windows 실행 스크립트
+└── run.sh                 # → Linux/Mac 실행 스크립트
 ```
-
-## project-flowchart
-![alt text](image.png)
 
 ## how-to-run-project
-1. 환경 설정
+- 간편 실행 방법
 ```bash
-# 프로젝트 클론
 $ git clone <repository-url>
 $ cd Aurora
+$ ./run.bat 
+# 또는 ./run.sh (환경에 맞게)
 ```
 
-2. Docker 실행
+- docker hub 이미지 실행
 ```bash
-# 컨테이너 빌드 및 실행
-$ docker build -t krjaeh0/aurora:latest .
-$ docker run -d -p 80:80 --name aurora-app krjaeh0/aurora:latest
+# 기본 실행
+$ docker run -d --name aurora -p 80:80 krjaeh0/aurora:latest
+
+# (선택사항) 소스코드 변경사항을 실시간으로 반영하려면:
+$ docker run -d --name aurora -p 80:80 -v "%cd%/Aurora:/app/Aurora" krjaeh0/aurora:latest
 ```
 
 3. 접속
 - 웹 브라우저에서 http://localhost 또는 http://127.0.0.1 접속
 
 ## license
-이 프로젝트는 MIT 라이선스 하에 배포됩니다. 자세한 내용은 [LICENSE](LICENSE) 파일을 참조하세요.
+이 프로젝트는 MIT 라이선스 하에 배포됩니다.  
+자세한 내용은 [LICENSE](LICENSE) 파일을 참조하세요.
 
 - 자유로운 사용, 수정, 배포 가능
 - 상업적 이용 가능
