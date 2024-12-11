@@ -52,10 +52,12 @@ ENV PYTHONUNBUFFERED=1 \
     MYSQL_DATABASE=aurora_db \
     MYSQL_USER=aurora_user \
     MYSQL_PASSWORD=aurora_password \
-    MYSQL_HOST=localhost
+    MYSQL_HOST=localhost \
+    DJANGO_ALLOWED_HOSTS=* \
+    DJANGO_DEBUG=False
 
 # 80 포트 노출
-EXPOSE 80 3306
+EXPOSE 80
 
 # 컨테이너 이름 설정
 LABEL name="krjaeh0/aurora"
