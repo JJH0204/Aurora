@@ -3,21 +3,21 @@ const samplePosts = [
     {
         postImage: 'sample/sample-post-image.jpg',
         content: '첫 번째 샘플 포스트입니다. 여기에 내용이 들어갑니다.',
-        userImage: 'sample/sample-user-image.jpg',
+        userImage: 'sample/sample-user-image.png',
         nickname: 'User1',
         date: '2024-03-20'
     },
     {
-        postImage: 'sample/sample-post-image2.png',
+        postImage: 'sample/sample-post-image.jpg',
         content: '두 번째 샘플 포스트입니다. 다양한 내용을 포함할 수 있습니다.',
-        userImage: 'sample/sample-user-image.jpg',
+        userImage: 'sample/sample-user-image.png',
         nickname: 'User2',
         date: '2024-03-21'
     },
     {
         postImage: 'sample/sample-post-image.jpg',
         content: '세 번째 샘플 포스트입니다. 이미지와 텍스트를 자유롭게 배치할 수 있습니다.',
-        userImage: 'sample/sample-user-image.jpg',
+        userImage: 'sample/sample-user-image.png',
         nickname: 'User3',
         date: '2024-03-22'
     }
