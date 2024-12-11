@@ -1,32 +1,31 @@
-#!/bin/sh
+#!/bin/bash
 
-# MariaDB 서비스 시작
-echo "Starting MariaDB service..."
+# Start MariaDB service
 service mariadb start
 
-# MariaDB 초기 설정
-echo "Configuring MariaDB..."
-mysql -u root << EOF
-CREATE DATABASE IF NOT EXISTS $MYSQL_DATABASE;
-CREATE USER IF NOT EXISTS '$MYSQL_USER'@'localhost' IDENTIFIED BY '$MYSQL_PASSWORD';
-GRANT ALL PRIVILEGES ON $MYSQL_DATABASE.* TO '$MYSQL_USER'@'localhost';
+# Wait for MariaDB to be ready
+while ! mysqladmin ping -h "localhost" --silent; do
+    echo "Waiting for database to be ready..."
+    sleep 2
+done
+
+# Create database and user if they don't exist
+mysql -u root -p${MYSQL_ROOT_PASSWORD} << EOF
+CREATE DATABASE IF NOT EXISTS ${MYSQL_DATABASE};
+CREATE USER IF NOT EXISTS '${MYSQL_USER}'@'localhost' IDENTIFIED BY '${MYSQL_PASSWORD}';
+GRANT ALL PRIVILEGES ON ${MYSQL_DATABASE}.* TO '${MYSQL_USER}'@'localhost';
 FLUSH PRIVILEGES;
 EOF
 
-echo "Running migrations..."
-python manage.py migrate
+# 초기화 스크립트 실행
+mysql -u root -p$MYSQL_ROOT_PASSWORD < /docker-entrypoint-initdb.d/deploy_db.sql
 
-echo "Collecting static files..."
-python manage.py collectstatic --noinput
+# Apply database migrations
+python3 manage.py makemigrations
+python3 manage.py migrate
 
-echo "Starting Gunicorn..."
-exec gunicorn aurora.wsgi:application \
-    --bind 0.0.0.0:80 \
-    --timeout 120 \
-    --workers 3 \
-    --threads 3 \
-    --worker-class gthread \
-    --log-level debug \
-    --access-logfile - \
-    --error-logfile - \
-    --capture-output
+# Collect static files
+python3 manage.py collectstatic --noinput
+
+# Start Django development server
+python3 manage.py runserver 0.0.0.0:80

@@ -31,6 +31,10 @@ WORKDIR /app
 RUN mkdir -p /app/staticfiles /app/media && \
     chmod -R 755 /app/staticfiles /app/media
 
+# Assets 디렉토리 생성 (볼륨 마운트 포인트)
+RUN mkdir -p /app/Aurora/Assets && \
+    chmod -R 755 /app/Aurora/Assets
+
 # 가상 환경 생성 및 활성화
 RUN python3 -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
@@ -38,6 +42,13 @@ ENV PATH="/opt/venv/bin:$PATH"
 # requirements.txt 복사 및 패키지 설치
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
+
+# bcrypt 패키지 설치
+RUN pip3 install --no-cache-dir bcrypt
+
+# MariaDB 초기화 스크립트 복사
+COPY Maria/deploy_db.sql /docker-entrypoint-initdb.d/
+RUN chmod 755 /docker-entrypoint-initdb.d/deploy_db.sql
 
 # 나머지 프로젝트 파일 복사
 COPY . .
@@ -48,16 +59,19 @@ RUN dos2unix /app/docker-entrypoint.sh && \
     chmod +x /app/docker-entrypoint.sh
 
 # MariaDB 환경 변수 설정
-ENV MYSQL_DATABASE=aurora \
-    MYSQL_USER=aurora \
-    MYSQL_PASSWORD=aurora123! \
-    MYSQL_ROOT_PASSWORD=root123!
+ENV MYSQL_DATABASE=aurora_db \
+    MYSQL_USER=Aurora \
+    MYSQL_PASSWORD=AuroraRootPassword \
+    MYSQL_ROOT_PASSWORD=qwer
 
 # Django 환경 변수 설정
-ENV DJANGO_SETTINGS_MODULE=aurora.settings \
+ENV DJANGO_SETTINGS_MODULE=Django.settings \
     DJANGO_DEBUG=True \
     DJANGO_ALLOWED_HOSTS=* \
-    DATABASE_URL=mysql://aurora:aurora123!@localhost:3306/aurora
+    DATABASE_URL=mysql://Aurora:AuroraRootPassword@localhost:3306/aurora_db
+
+# 볼륨 설정
+VOLUME ["/app/Aurora"]
 
 # 포트 설정
 EXPOSE 80
