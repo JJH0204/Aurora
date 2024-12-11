@@ -101,6 +101,8 @@ $ docker run -d --name aurora -p 80:80 -v "%cd%/Aurora:/app/Aurora" krjaeh0/auro
 
 3. 접속
 - 웹 브라우저에서 http://localhost 또는 http://127.0.0.1 접속
+- 관리자 페이지: http://localhost/admin
+- 
 
 ## license
 이 프로젝트는 MIT 라이선스 하에 배포됩니다.  

@@ -1,0 +1,213 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aurora - 저장된 게시물</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <style>
+        .saved-posts-container {
+            max-width: 1000px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+
+        .page-title {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 30px;
+            color: #333;
+            text-align: center;
+        }
+
+        .posts-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .post-item {
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            transition: transform 0.2s ease;
+        }
+
+        .post-item:hover {
+            transform: translateY(-5px);
+        }
+
+        .post-image {
+            width: 100%;
+            aspect-ratio: 1;
+            object-fit: cover;
+        }
+
+        .post-content {
+            padding: 15px;
+        }
+
+        .post-author {
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #333;
+        }
+
+        .post-description {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 10px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .post-stats {
+            display: flex;
+            gap: 15px;
+            color: #888;
+            font-size: 14px;
+        }
+
+        .stat {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .no-posts {
+            text-align: center;
+            padding: 50px;
+            color: #666;
+            font-size: 16px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 50px;
+            color: #666;
+        }
+
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            margin: 0 auto 10px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #333;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header Section -->
+    <div class="header">
+        <div class="search-container">
+            <input type="text" class="form-control search" placeholder="Aurora">
+            <img src="{% static 'img/search.png' %}" alt="Search">
+        </div>
+        <button class="login-btn" onclick="window.location.href='/login/'">login</button>
+    </div>
+
+    <!-- Side Menu -->
+    <div class="side-menu">
+        <button onclick="window.location.href='/'"><img src="{% static 'img/aurora_logo.png' %}" alt="Aurora Logo"></button>
+        <button onclick="window.location.href='/post/'"><img src="{% static 'img/post.png' %}" alt="Post"></button>
+        <button onclick="window.location.href='/profile/'"><img src="{% static 'img/people.png' %}" alt="Profile"></button>
+        <button onclick="window.location.href='/save/'"><img src="{% static 'img/save.png' %}" alt="Save"></button>
+    </div>
+
+    <!-- Arrow Down -->
+    <div class="arrow-down" style="cursor: pointer;">
+        <img src="{% static 'img/arrow.png' %}" alt="Arrow Down" style="transition: transform 0.3s ease;">
+    </div>
+
+    <div class="container-fluid">
+        <div class="main-content">
+            <div class="saved-posts-container">
+                <h1 class="page-title">저장된 게시물</h1>
+                <div id="loading" class="loading">
+                    <div class="loading-spinner"></div>
+                    <p>게시물을 불러오는 중...</p>
+                </div>
+                <div id="posts-grid" class="posts-grid" style="display: none;"></div>
+                <div id="no-posts" class="no-posts" style="display: none;">
+                    아직 좋아요한 게시물이 없습니다.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            loadLikedPosts();
+        });
+
+        function loadLikedPosts() {
+            const loading = document.getElementById('loading');
+            const postsGrid = document.getElementById('posts-grid');
+            const noPosts = document.getElementById('no-posts');
+
+            fetch('/api/liked-posts')
+                .then(response => response.json())
+                .then(data => {
+                    loading.style.display = 'none';
+                    
+                    if (data.posts && data.posts.length > 0) {
+                        postsGrid.style.display = 'grid';
+                        postsGrid.innerHTML = '';
+                        
+                        data.posts.forEach(post => {
+                            const postElement = createPostElement(post);
+                            postsGrid.appendChild(postElement);
+                        });
+                    } else {
+                        noPosts.style.display = 'block';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    loading.style.display = 'none';
+                    noPosts.style.display = 'block';
+                    noPosts.textContent = '게시물을 불러오는 중 오류가 발생했습니다.';
+                });
+        }
+
+        function createPostElement(post) {
+            const div = document.createElement('div');
+            div.className = 'post-item';
+            div.innerHTML = `
+                <img src="${post.image_url}" alt="Post" class="post-image">
+                <div class="post-content">
+                    <div class="post-author">${post.author}</div>
+                    <p class="post-description">${post.description}</p>
+                    <div class="post-stats">
+                        <div class="stat">
+                            <span>❤️</span>
+                            <span>${post.likes}</span>
+                        </div>
+                        <div class="stat">
+                            <span>💬</span>
+                            <span>${post.comments}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+            return div;
+        }
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

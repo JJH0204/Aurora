@@ -1,0 +1,170 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aurora - 새 게시물</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <style>
+        .post-container {
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .image-preview {
+            width: 100%;
+            height: 300px;
+            border: 2px dashed #ddd;
+            border-radius: 5px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 20px;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .image-preview img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+
+        .image-preview .placeholder {
+            color: #999;
+            text-align: center;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 100px;
+            margin-bottom: 20px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            resize: vertical;
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 10px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .submit-btn:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header Section -->
+    <div class="header">
+        <div class="search-container">
+            <input type="text" class="form-control search" placeholder="Aurora">
+            <img src="{% static 'img/search.png' %}" alt="Search">
+        </div>
+        <button class="login-btn" onclick="window.location.href='/login/'">login</button>
+    </div>
+
+    <!-- Side Menu -->
+    <div class="side-menu">
+        <button onclick="window.location.href='/'"><img src="{% static 'img/aurora_logo.png' %}" alt="Aurora Logo"></button>
+        <button onclick="window.location.href='/post/'"><img src="{% static 'img/post.png' %}" alt="Post"></button>
+        <button onclick="window.location.href='/profile/'"><img src="{% static 'img/people.png' %}" alt="Profile"></button>
+        <button onclick="window.location.href='/save/'"><img src="{% static 'img/save.png' %}" alt="Save"></button>
+    </div>
+
+    <!-- Arrow Down -->
+    <div class="arrow-down" style="cursor: pointer;">
+        <img src="{% static 'img/arrow.png' %}" alt="Arrow Down" style="transition: transform 0.3s ease;">
+    </div>
+
+    <div class="container-fluid">
+        <div class="main-content">
+            <div class="post-container">
+                <form id="postForm" onsubmit="submitPost(event)">
+                    <div class="image-preview" onclick="document.getElementById('imageInput').click()">
+                        <input type="file" id="imageInput" style="display: none" accept="image/*" multiple onchange="updateImagePreview()">
+                        <div class="placeholder">
+                            <img src="{% static 'img/upload.png' %}" alt="Upload" style="width: 50px; height: 50px; margin-bottom: 10px;">
+                            <p>클릭하여 이미지 업로드</p>
+                        </div>
+                    </div>
+                    <textarea name="description" placeholder="게시물 내용을 입력하세요..." required></textarea>
+                    <button type="submit" class="submit-btn">게시하기</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function updateImagePreview() {
+            const input = document.getElementById('imageInput');
+            const preview = document.querySelector('.image-preview');
+            const placeholder = preview.querySelector('.placeholder');
+
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    placeholder.style.display = 'none';
+                    
+                    // Clear previous preview
+                    const existingImg = preview.querySelector('img:not([alt="Upload"])');
+                    if (existingImg) {
+                        preview.removeChild(existingImg);
+                    }
+
+                    const img = document.createElement('img');
+                    img.src = e.target.result;
+                    preview.appendChild(img);
+                }
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function submitPost(event) {
+            event.preventDefault();
+            
+            const form = document.getElementById('postForm');
+            const formData = new FormData(form);
+            
+            // Add images to formData
+            const imageInput = document.getElementById('imageInput');
+            for (let i = 0; i < imageInput.files.length; i++) {
+                formData.append(`image${i}`, imageInput.files[i]);
+            }
+
+            fetch('/api/post', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.message) {
+                    alert(data.message);
+                    if (data.message === '게시물이 성공적으로 업로드되었습니다.') {
+                        window.location.href = '/';  // 메인 페이지로 리다이렉트
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('게시물 업로드 중 오류가 발생했습니다.');
+            });
+        }
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

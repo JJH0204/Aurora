@@ -20,11 +20,10 @@
 
     <!-- Side Menu -->
     <div class="side-menu">
-        <button><img src="{% static 'img/home.png' %}" alt="Home"></button>
-        <button><img src="{% static 'img/menu.png' %}" alt="Menu"></button>
-        <button><img src="{% static 'img/aurora_logo.png' %}" alt="Aurora Logo"></button>
-        <button><img src="{% static 'img/people.png' %}" alt="People"></button>
-        <button><img src="{% static 'img/like.png' %}" alt="Like"></button>
+        <button onclick="window.location.href='/'"><img src="{% static 'img/aurora_logo.png' %}" alt="Aurora Logo"></button>
+        <button onclick="window.location.href='/post/'"><img src="{% static 'img/post.png' %}" alt="Post"></button>
+        <button onclick="window.location.href='/profile/'"><img src="{% static 'img/people.png' %}" alt="Profile"></button>
+        <button onclick="window.location.href='/save/'"><img src="{% static 'img/save.png' %}" alt="Save"></button>
     </div>
 
     <!-- Arrow Down -->
