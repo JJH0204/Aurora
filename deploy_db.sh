@@ -69,10 +69,15 @@ CREATE TABLE MEDIA_FILE (
     media_number INT,
     FOREIGN KEY (feed_id) REFERENCES FEED_INFO(feed_id)
 );
+
+CREATE USER 'Aurora'@'%' IDENTIFIED BY 'AuroraRootPassword';
+GRANT ALL PRIVILEGES ON aurora_db.* TO 'Aurora'@'%';
+FLUSH PRIVILEGES;
 EOF
 
 # MySQL 컨테이너 이름 설정
 CONTAINER_NAME="aurora-app"
+
 
 # 스크립트 파일을 컨테이너에 복사
 docker cp db_script.sql $CONTAINER_NAME:/db_script.sql

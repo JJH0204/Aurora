@@ -1,90 +1,119 @@
-// 샘플 포스트 데이터
-const samplePosts = [
+// 포스트 데이터 예시
+const posts = [
     {
-        postImage: 'sample/sample-post-image.jpg',
-        content: '첫 번째 샘플 포스트입니다. 여기에 내용이 들어갑니다.',
+        id: 1,
+        imageUrl: 'sample/sample-post-image.jpg',
+        content: '첫 번째 샘플 포스트입니다. 여기에 내용이 들어갑니다',
         userImage: 'sample/sample-user-image.png',
         nickname: 'User1',
-        date: '2024-03-20'
+        date: '2024-03-20',
+        isLiked: false
     },
+    
     {
-        postImage: 'sample/sample-post-image.jpg',
-        content: '두 번째 샘플 포스트입니다. 다양한 내용을 포함할 수 있습니다.',
+        id: 2,
+        imageUrl: 'sample/sample-post-image.jpg',
+        content: '두 번째 샘플 포스트입니다. 여기에 내용이 들어갑니다',
         userImage: 'sample/sample-user-image.png',
         nickname: 'User2',
-        date: '2024-03-21'
+        date: '2024-03-20',
+        isLiked: false
     },
+
     {
-        postImage: 'sample/sample-post-image.jpg',
-        content: '세 번째 샘플 포스트입니다. 이미지와 텍스트를 자유롭게 배치할 수 있습니다.',
+        id: 3,
+        imageUrl: 'sample/sample-post-image.jpg',
+        content: '세 번째 샘플 포스트입니다. 여기에 내용이 들어갑니다',
         userImage: 'sample/sample-user-image.png',
         nickname: 'User3',
-        date: '2024-03-22'
+        date: '2024-03-20',
+        isLiked: false
     }
 ];
 
-// 포스트 생성 함수
-function createPost(postData) {
-    return `
-        <div class="post-card">
-            <div class="post-image">
-                <img src="${postData.postImage}" alt="Post Image">
+// 포스트 카드 생성 함수
+function createPostCard(post) {
+    const postCard = document.createElement('div');
+    postCard.className = 'post-card';
+    
+    postCard.innerHTML = `
+        <div class="post-image">
+            <img src="${post.imageUrl}" alt="Post Image">
+        </div>
+        <div class="post-content">
+            ${post.content}
+        </div>
+        <div class="post-footer">
+            <div class="user-info">
+                <img src="${post.userImage}" alt="User" class="user-image">
+                <span class="nickname">${post.nickname}</span>
+                <img src="img/like_${post.isLiked ? 'on' : 'off'}.png" 
+                     alt="Like" 
+                     class="like-icon"
+                     data-post-id="${post.id}"
+                     style="width: 24px; height: 24px; margin-left: 10px; cursor: pointer;">
             </div>
-            <div class="post-content">
-                <p>${postData.content}</p>
-            </div>
-            <div class="post-footer">
-                <div class="user-info">
-                    <img src="${postData.userImage}" alt="User Profile" class="user-image">
-                    <span class="nickname">${postData.nickname}</span>
-                </div>
-                <span class="date">${postData.date}</span>
-            </div>
+            <div class="date">${post.date}</div>
         </div>
     `;
+
+    // 좋아요 버튼 이벤트 리스너
+    const likeIcon = postCard.querySelector('.like-icon');
+    likeIcon.addEventListener('click', function() {
+        const postId = this.dataset.postId;
+        const post = posts.find(p => p.id == postId);
+        post.isLiked = !post.isLiked;
+        this.src = `img/like_${post.isLiked ? 'on' : 'off'}.png`;
+        
+        // 애니메이션 적용
+        this.classList.remove('animate'); // 기존 애니메이션 제거
+        void this.offsetWidth; // 리플로우 강제 실행
+        this.classList.add('animate'); // 새 애니메이션 추가
+        
+        // 애니메이션 종료 후 클래스 제거
+        setTimeout(() => {
+            this.classList.remove('animate');
+        }, 500); // 애니메이션 지속 시간과 동일하게 설정
+    });
+
+    return postCard;
 }
 
-// 피드 초기화 함수
-function initializeFeed() {
+// 페이지 로드 시 포스트 생성 및 arrow 버튼 이벤트 추가
+document.addEventListener('DOMContentLoaded', function() {
     const feed = document.querySelector('.feed');
-    if (!feed) return;
-
-    feed.innerHTML = ''; // 기존 내용 초기화
-    samplePosts.forEach(post => {
-        feed.innerHTML += createPost(post);
+    posts.forEach(post => {
+        feed.appendChild(createPostCard(post));
     });
-}
 
-let currentPostIndex = 0;
+    // Arrow 버튼 클릭 이벤트 추가
+    const arrowButton = document.querySelector('.arrow-down');
+    let currentPostIndex = 0;
 
-// 화살표 클릭 시 다음 포스트로 이동
-function scrollToNextPost() {
+    arrowButton.addEventListener('click', function() {
+        const mainContent = document.querySelector('.main-content');
+        const postCards = document.querySelectorAll('.post-card');
+        
+        currentPostIndex = (currentPostIndex + 1) % postCards.length;
+        const nextPost = postCards[currentPostIndex];
+        
+        // 부드러운 스크롤 효과
+        mainContent.scrollTo({
+            top: nextPost.offsetTop,
+            behavior: 'smooth'
+        });
+    });
+
+    // 스크롤 이벤트로 현재 포스트 인덱스 업데이트
     const mainContent = document.querySelector('.main-content');
-    const posts = document.querySelectorAll('.post-card');
-    if (!posts.length) return;
-
-    currentPostIndex = (currentPostIndex + 1) % posts.length;
-    const targetPost = posts[currentPostIndex];
-    
-    mainContent.scrollTo({
-        top: targetPost.offsetTop,
-        behavior: 'smooth'
+    mainContent.addEventListener('scroll', function() {
+        const postCards = document.querySelectorAll('.post-card');
+        const scrollPosition = mainContent.scrollTop;
+        
+        postCards.forEach((card, index) => {
+            if (Math.abs(card.offsetTop - scrollPosition) < 50) {
+                currentPostIndex = index;
+            }
+        });
     });
-}
-
-// 이벤트 리스너 설정
-document.addEventListener('DOMContentLoaded', () => {
-    initializeFeed();
-    
-    // 로고 클릭 시 새로고침
-    const logoButton = document.querySelector('.side-menu button:nth-child(3)');
-    logoButton.addEventListener('click', () => {
-        window.location.reload();
-    });
-
-    // 화살표 클릭 이벤트 추가
-    const arrowDown = document.querySelector('.arrow-down');
-    if (arrowDown) {
-        arrowDown.addEventListener('click', scrollToNextPost);
-    }
 });

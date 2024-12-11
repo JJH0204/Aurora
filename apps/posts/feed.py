@@ -1,5 +1,4 @@
-# app.py
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template
 from flask_sqlalchemy import SQLAlchemy
 
 app = Flask(__name__)
@@ -32,6 +31,12 @@ def add_feed():
     db.session.commit()
 
     return jsonify({'message': 'Feed added successfully', 'feed_id': new_feed.feed_id}), 201
+
+# 피드 목록을 불러오는 라우트
+@app.route('/')
+def index():
+    feeds = FeedInfo.query.all()  # 모든 피드 정보 조회
+    return render_template('base.html', feeds=feeds)  # HTML 템플릿에 전달
 
 if __name__ == '__main__':
     db.create_all()  # 데이터베이스 테이블 생성
