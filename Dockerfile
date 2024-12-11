@@ -25,6 +25,10 @@ RUN mkdir -p /var/run/mysqld && \
 # MariaDB 데이터베이스 초기화
 RUN mysql_install_db --user=mysql --datadir=/var/lib/mysql
 
+# 정적 파일 디렉토리 생성 및 권한 설정
+RUN mkdir -p /app/staticfiles /app/media && \
+    chmod -R 755 /app/staticfiles /app/media
+
 # requirements.txt 먼저 복사
 COPY requirements.txt .
 
@@ -54,7 +58,10 @@ ENV PYTHONUNBUFFERED=1 \
     MYSQL_PASSWORD=aurora_password \
     MYSQL_HOST=localhost \
     DJANGO_ALLOWED_HOSTS=* \
-    DJANGO_DEBUG=False
+    DJANGO_DEBUG=True
+
+# 볼륨 설정
+VOLUME ["/app/staticfiles", "/app/media"]
 
 # 80 포트 노출
 EXPOSE 80
