@@ -2,8 +2,8 @@ body {
     margin: 0;
     padding: 0;
     font-family: Arial, sans-serif;
-    background-color: #ced4da;
-    color: #f1f1f1;
+    background-color: #f0f2f9;
+    color: #6c7293;
 }
 
 .container-fluid {
@@ -39,23 +39,42 @@ body {
     transform: translateX(-50%);
     width: 350px;
     z-index: 2;
+    display: flex;
+    align-items: center;
 }
 
 .header .search-container input {
     width: 100%;
     text-align: center;
     padding-right: 40px;
+    border-radius: 5px;
+    border: 1px solid #e8e6f7;
+    position: relative;
+}
+
+.header .search-container::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    top: 0;
+    width: 40px;
+    height: 100%;
+    background-color: #a193e7;
+    border-radius: 0 5px 5px 0;
 }
 
 .header .search-container img {
     position: absolute;
-    right: 10px;
+    right: 7px;
     top: 50%;
     transform: translateY(-50%);
-    width: 20px;
-    height: 20px;
+    width: 26px;
+    height: 26px;
     cursor: pointer;
     transition: transform 0.2s ease;
+    z-index: 1;
+    padding: 0;
+    background: none;
 }
 
 .header .search-container img:hover {
@@ -68,8 +87,8 @@ body {
     top: 20px;
     right: 40px;
     padding: 8px 20px;
-    background-color: #333;
-    color: white;
+    background-color: #a193e7;
+    color: #f7f7fb;
     border: none;
     border-radius: 5px;
     cursor: pointer;
@@ -79,7 +98,7 @@ body {
 }
 
 .login-btn:hover {
-    background-color: #444;
+    background-color: #9384e3;
 }
 
 /* 사이드 메뉴 스타일 */
@@ -116,6 +135,21 @@ body {
     cursor: pointer;
 }
 
+.side-menu button img {
+    filter: opacity(0.7) drop-shadow(0 0 0 #a193e7); /* 기본 상태 */
+    transition: all 0.3s ease;
+}
+
+.side-menu button:hover img {
+    filter: opacity(0.9) drop-shadow(0 0 0 #8c7ae6); /* 호버 시 더 진한 색상 */
+    transform: scale(1.2);
+}
+
+/* 오로라 로고는 필터 제외 */
+.side-menu button img[alt="Aurora Logo"] {
+    filter: none;
+}
+
 /* 하단 화살표 스타일 */
 .arrow-down {
     position: fixed;
@@ -129,6 +163,7 @@ body {
     justify-content: center;
     align-items: center;
     z-index: 10;
+    pointer-events: auto;
 }
 
 .arrow-down img {
@@ -152,7 +187,7 @@ body {
     height: calc(100vh - 160px);
     -ms-overflow-style: none;
     scrollbar-width: none;
-    pointer-events: none;
+    pointer-events: auto;
 }
 
 .main-content .feed {
@@ -173,10 +208,10 @@ body {
 /* 포스트 카드 스타일 */
 .post-card {
     scroll-snap-align: start;
-    background: white;
+    background: #f7f7fb;
     border-radius: 30px;
     padding: 20px;
-    border: 2px solid #8c7ae6;
+    border: 2px solid #d4cef7;
     box-shadow: 0 2px 5px rgba(0,0,0,0.1);
     margin-bottom: 30px;
     height: calc(104vh - 200px);
@@ -204,7 +239,7 @@ body {
 
 .post-content {
     padding: 10px 0;
-    color: #333;
+    color: #6c7293;
     line-height: 1.6;
     font-size: 16px;
     flex-grow: 1;
@@ -217,7 +252,7 @@ body {
     justify-content: space-between;
     align-items: center;
     padding-top: 15px;
-    border-top: 1px solid #eee;
+    border-top: 1px solid #e8e6f7;
     flex-shrink: 0;
     margin-top: auto;
 }
@@ -225,7 +260,7 @@ body {
 .user-info {
     display: flex;
     align-items: center;
-    gap: 15px;
+    gap: 10px;
 }
 
 .user-image {
@@ -233,20 +268,20 @@ body {
     height: 60px;
     border-radius: 50%;
     object-fit: cover;
-    border: 2px solid #8c7ae6;
+    border: 2px solid #d4cef7;
 }
 
 .nickname {
-    background: #8c7ae6;
-    color: white;
+    background: #a193e7;
+    color: #f7f7fb;
     padding: 10px 25px;
     border-radius: 25px;
     font-size: 15px;
 }
 
 .date {
-    background: #8c7ae6;
-    color: white;
+    background: #a193e7;
+    color: #f7f7fb;
     padding: 10px 25px;
     border-radius: 25px;
     font-size: 15px;
@@ -269,11 +304,41 @@ body {
 }
 
 .post-content::-webkit-scrollbar-track {
-    background: #f1f1f1;
+    background: #f0f2f9;
     border-radius: 3px;
 }
 
 .post-content::-webkit-scrollbar-thumb {
-    background: #8c7ae6;
+    background: #a193e7;
     border-radius: 3px;
+}
+
+.like-button {
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+}
+
+.like-icon {
+    width: 30px;
+    height: 30px;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+.like-icon:hover {
+    transform: scale(1.1);
+}
+
+.like-icon.animate {
+    animation: heartShake 0.5s ease;
+}
+
+@keyframes heartShake {
+    0% { transform: scale(1); }
+    25% { transform: scale(1.2) rotate(-15deg); }
+    50% { transform: scale(1.2) rotate(15deg); }
+    75% { transform: scale(1.2) rotate(-15deg); }
+    100% { transform: scale(1); }
 }
