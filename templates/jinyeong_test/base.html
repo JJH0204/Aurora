@@ -5,201 +5,37 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Aurora SNS</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        body {
-            margin: 0;
-            padding: 0;
-            font-family: Arial, sans-serif;
-            background-color: #ced4da;
-            color: #f1f1f1; */
-        }
-
-        .container-fluid {
-            display: flex;
-            height: 90vh;
-            max-width: 700px;
-            margin: 0 auto;
-            position: relative;
-            border-radius: 10px;
-        }
-
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-direction: row;
-            padding: 10px;
-            position: relative;
-            z-index: 2;
-        }
-
-        .header img {
-            height: 45px;
-        }
-
-        .header .brand {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .header .brand .aurora-text {
-            font-size: 22px;
-            font-weight: bold;
-            background: linear-gradient(45deg, #ff1493, #a738b8, #4a00e0);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .header .search-container {
-            position: relative;
-            width: 400px;
-            margin: 0 auto;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .header .search-container input {
-            width: 100%;
-        }
-
-        .header .search-container img {
-            width: 30px;
-            height: 30px;
-            cursor: pointer;
-        }
-
-        .login-btn {
-            position: absolute;
-            right: 20px;
-            top: 20px;
-            padding: 8px 20px;
-            background-color: #333;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
-        }
-
-        .login-btn:hover {
-            background-color: #444;
-        }
-
-        .side-menu {
-            position: fixed;
-            left: 20px;
-            top: 50%;
-            transform: translateY(-50%);
-            display: flex;
-            flex-direction: column;
-            gap: 30px;
-        }
-
-        .side-menu img {
-            width: 40px;
-            height: 40px;
-            cursor: pointer;
-        }
-
-        .bottom-info {
-            position: fixed;
-            left: 20px;
-            bottom: 20px;
-        }
-
-        .arrow-down {
-            position: fixed;
-            left: 50%;
-            bottom: 20px;
-            transform: translateX(-50%);
-            cursor: pointer;
-            width: 60px;
-            height: 60px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .arrow-down img {
-            width: 30px;
-            height: 30px;
-            transform: rotate(90deg);
-            transition: transform 0.3s ease;
-        }
-
-        .arrow-down:hover img {
-            transform: rotate(90deg) scale(1.2);
-        }
-
-        .main-content {
-            flex: 1;
-            padding: 20px;
-            box-sizing: border-box;
-        }
-
-        .main-content .feed {
-            height: 95%;
-            border: 1px solid #dee2e6;
-            border-radius: 5px;
-            background: rgba(255, 255, 255, 0.4);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 24px;
-            color: #f1f1f1;
-            position: relative;
-            z-index: 1;
-            backdrop-filter: blur(8px);
-        }
-
-        /* 아이콘 호버 효과 공통 스타일 */
-        .header img,
-        .side-menu img,
-        .arrow-down img {
-            transition: transform 0.3s ease;
-        }
-
-        .header img:hover,
-        .side-menu img:hover,
-        .arrow-down img:hover {
-            transform: scale(1.2);
-        }
-    </style>
+    <link href="style.css" rel="stylesheet">
 </head>
 <body>
     <!-- Header Section -->
     <div class="header">
-        <div class="brand">
-            <img src="aurora_logo.png" alt="Aurora Logo">
-            <span class="aurora-text">Aurora</span>
-        </div>
         <div class="search-container">
             <input type="text" class="form-control search" placeholder="검색">
-            <img src="search.png" alt="Search">
+            <img src="img/search.png" alt="Search">
         </div>
-        <button class="login-btn">login</button>
+        <button class="login-btn">login </button>
     </div>
 
     <!-- Side Menu -->
     <div class="side-menu">
-        <img src="home.png" alt="Home">
-        <img src="menu.png" alt="Menu">
-        <img src="people.png" alt="People">
-        <img src="like.png" alt="Like">
+        <button><img src="img/home.png" alt="Home"></button>
+        <button><img src="img/menu.png" alt="Menu"></button>
+        <button><img src="img/aurora_logo.png" alt="Aurora Logo"></button>
+        <button><img src="img/people.png" alt="People"></button>
+        <button><img src="img/like.png" alt="Like"></button>
     </div>
 
     <!-- Arrow Down -->
-    <div class="arrow-down">
-        <img src="arrow.png" alt="Arrow Down">
+    <div class="arrow-down" style="cursor: pointer;">
+        <img src="img/arrow.png" alt="Arrow Down" style="transition: transform 0.3s ease;">
     </div>
 
     <div class="container-fluid">
-
-        <!-- Main Content -->
         <div class="main-content">
-            <div class="feed">피드</div>
+            <div class="feed">
+                <!-- 여기서 JavaScript로 포스트가 동적으로 생성됩니다 -->
+            </div>
         </div>
     </div>
 
@@ -216,5 +52,6 @@
     </script>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
