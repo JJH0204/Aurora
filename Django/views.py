@@ -11,6 +11,7 @@ from django.conf import settings
 import traceback  # 상세한 오류 추적을 위해 추가
 from django.views.decorators.http import require_http_methods
 from datetime import datetime
+from django.db import transaction
 
 
 @csrf_exempt
@@ -29,7 +30,7 @@ def signup(request):
 
         # 이메일 중복 검사
         if User.objects.filter(email=email).exists():
-            return JsonResponse({'message': '이��일 사용 중인 이메일입니다.'}, status=400)
+            return JsonResponse({'message': '이메일 사용 중인 이메일입니다.'}, status=400)
 
         # Django User 모델을 사용하여 사용자 생성
         user = User.objects.create_user(
@@ -61,7 +62,7 @@ def signup(request):
 @csrf_exempt
 def login(request):
     if request.method != 'POST':
-        return JsonResponse({'message': '잘��된 요청 방식입니다.'}, status=405)
+        return JsonResponse({'message': '잘못된 요청 방식입니다.'}, status=405)
 
     try:
         data = json.loads(request.body)
@@ -153,30 +154,6 @@ def create_post(request):
         print(f"Error during post creation: {str(e)}")
         return JsonResponse({'message': '게시물 업로드 중 오류가 발생했습니다.'}, status=500)
 
-@csrf_exempt
-@login_required
-def get_profile(request, user_id=None):
-    try:
-        with connection.cursor() as cursor:
-            cursor.execute("""
-                SELECT ui.username, ua.email, ui.profile_image
-                FROM USER_INFO ui
-                JOIN USER_ACCESS ua ON ui.user_id = ua.user_id
-                WHERE ui.user_id = %s
-            """, [user_id if user_id else request.user.id])
-            
-            user_data = cursor.fetchone()
-            if not user_data:
-                return JsonResponse({'error': '사용자를 찾을 수 없습니다.'}, status=404)
-            
-            return JsonResponse({
-                'username': user_data[0],
-                'email': user_data[1],
-                'profile_image': user_data[2] if user_data[2] else None
-            })
-    except Exception as e:
-        print(f"Error getting profile: {str(e)}")
-        return JsonResponse({'error': '프로필을 불러오는 중 오류가 발생했습니다.'}, status=500)
 
 @csrf_exempt
 @login_required
@@ -281,72 +258,95 @@ def get_liked_posts(request):
         print(f"Error fetching liked posts: {str(e)}")
         return JsonResponse({'message': '좋아요한 게시물을 불러오는 중 오류가 발생했습니다.'}, status=500)
 
+
 @csrf_exempt
-def get_profile_info(request):
+@login_required
+def get_profile(request, user_id=None):
     try:
         with connection.cursor() as cursor:
             cursor.execute("""
-                SELECT ui.username, ua.email, ui.bio
+                SELECT ui.username, ua.email, ui.profile_image
                 FROM USER_INFO ui
                 JOIN USER_ACCESS ua ON ui.user_id = ua.user_id
                 WHERE ui.user_id = %s
-            """, [1])  # 현재는 임시로 user_id = 1 사용
+            """, [user_id if user_id else request.user.id])
             
-            user_info = cursor.fetchone()
-            if user_info:
-                return JsonResponse({
-                    'status': 'success',
-                    'data': {
-                        'username': user_info[0],
-                        'email': user_info[1],
-                        'bio': user_info[2] or ''
-                    }
-                })
+            user_data = cursor.fetchone()
+            if not user_data:
+                return JsonResponse({'error': '사용자를 찾을 수 없습니다.'}, status=404)
+            
             return JsonResponse({
-                'status': 'error',
-                'message': '사용자 정보를 찾을 수 없습니다.'
-            }, status=404)
+                'username': user_data[0],
+                'email': user_data[1],
+                'profile_image': user_data[2] if user_data[2] else None
+            })
     except Exception as e:
-        print(f"Error getting profile info: {str(e)}")
-        return JsonResponse({
-            'status': 'error',
-            'message': '프로필 정보를 가져오는 중 오류가 발생했습니다.'
-        }, status=500)
+        print(f"Error getting profile: {str(e)}")
+        return JsonResponse({'error': '프로필을 불러오는 중 오류가 발생했습니다.'}, status=500)
+
 
 @csrf_exempt
 def update_profile(request):
     if request.method == 'POST':
         try:
-            data = json.loads(request.body)
-            new_username = data.get('username')
-            new_email = data.get('email')
-            new_bio = data.get('bio', '')
-
-            # Django 모델을 사용하도록 수정
-            try:
-                user_info = UserInfo.objects.get(user_id=1)  # 현재 로그인된 사용자 ID로 수정 필요
-                user_info.username = new_username
-                user_info.save()
-
-                user_access = UserAccess.objects.get(user_id=1)
-                user_access.email = new_email
-                user_access.save()
+            # 프로필 이미지 처리
+            if 'profile_image' in request.FILES:
+                profile_image = request.FILES['profile_image']
+                
+                # 저장 경로 설정
+                profile_images_dir = '/home/test/Aurora/Aurora/Data/Profile_images'
+                os.makedirs(profile_images_dir, exist_ok=True)
+                
+                # 파재 날짜 형식 설정 (YYYYMMDD)
+                current_date = datetime.now().strftime('%Y%m%d')
+                
+                # 현재 사용자의 username 가져오기
+                with connection.cursor() as cursor:
+                    cursor.execute("""
+                        SELECT username FROM USER_INFO 
+                        WHERE user_id = %s
+                    """, [request.user.id])
+                    username = cursor.fetchone()[0]
+                
+                # 파일 이름 설정 (profile_username_YYYYMMDD.확장자)
+                file_extension = os.path.splitext(profile_image.name)[1].lower()
+                new_filename = f"profile_{username}_{current_date}{file_extension}"
+                file_path = os.path.join(profile_images_dir, new_filename)
+                
+                # 기존 프로필 이미지 삭제
+                cursor.execute("""
+                    SELECT profile_image FROM USER_INFO 
+                    WHERE user_id = %s
+                """, [request.user.id])
+                old_image = cursor.fetchone()[0]
+                if old_image:
+                    old_image_path = os.path.join(profile_images_dir, old_image)
+                    if os.path.exists(old_image_path):
+                        os.remove(old_image_path)
+                
+                # 새 파일 저장
+                with open(file_path, 'wb+') as destination:
+                    for chunk in profile_image.chunks():
+                        destination.write(chunk)
+                
+                # 데이터베이스에 새 파일 경로 저장
+                with connection.cursor() as cursor:
+                    cursor.execute("""
+                        UPDATE USER_INFO 
+                        SET profile_image = %s
+                        WHERE user_id = %s
+                    """, [new_filename, request.user.id])
 
                 return JsonResponse({
                     'status': 'success',
-                    'message': '프로필이 성공적으로 업데이트되었습니다.'
+                    'message': '프로필 이미지가 성공적으로 업데이트되었습니다.'
                 })
-            except UserInfo.DoesNotExist:
-                return JsonResponse({
-                    'status': 'error',
-                    'message': '사용자를 찾을 수 없습니다.'
-                }, status=404)
 
         except Exception as e:
-            print("Error during profile update:", str(e))
+            print("Error during profile image update:", str(e))
             return JsonResponse({
                 'status': 'error',
-                'message': '프로필 업데이트 중 오류가 발생했습니다.'
+                'message': '프로필 이미지 업데이트 중 오류가 발생했습니다.'
             }, status=500)
 
     return JsonResponse({'message': '잘못된 요청 방식입니다.'}, status=405)
@@ -396,9 +396,14 @@ def toggle_like(request):
         return JsonResponse({'message': '잘못된 요청 방식입니다.'}, status=405)
 
     try:
+        # JSON 데이터 파싱
         data = json.loads(request.body)
         feed_id = data.get('feed_id')
         user_id = request.user.id
+
+        # 유효성 검사
+        if not feed_id:
+            return JsonResponse({'message': 'feed_id가 필요합니다.'}, status=400)
 
         with transaction.atomic():
             # 이미 좋아요를 눌렀는지 확인
@@ -420,13 +425,14 @@ def toggle_like(request):
                     # FEED_INFO의 like_count 감소
                     cursor.execute("""
                         UPDATE FEED_INFO 
-                        SET like_count = like_count - 1 
+                        SET like_count = GREATEST(like_count - 1, 0)
                         WHERE feed_id = %s
                     """, [feed_id])
                 
                 return JsonResponse({
                     'message': '좋아요 취소됨', 
-                    'is_liked': False
+                    'is_liked': False,
+                    'likes_count': max(0, get_likes_count(feed_id))
                 })
             else:
                 # 좋아요 추가
@@ -445,12 +451,25 @@ def toggle_like(request):
                 
                 return JsonResponse({
                     'message': '좋아요 완료', 
-                    'is_liked': True
+                    'is_liked': True,
+                    'likes_count': get_likes_count(feed_id)
                 })
 
+    except json.JSONDecodeError:
+        return JsonResponse({'message': '잘못된 JSON 형식입니다.'}, status=400)
     except Exception as e:
         print(f"Error during like toggle: {str(e)}")
         return JsonResponse({'message': '좋아요 처리 중 오류가 발생했습니다.'}, status=500)
+
+def get_likes_count(feed_id):
+    """특정 피드의 좋아요 수를 반환하는 헬퍼 함수"""
+    with connection.cursor() as cursor:
+        cursor.execute("""
+            SELECT like_count FROM FEED_INFO 
+            WHERE feed_id = %s
+        """, [feed_id])
+        result = cursor.fetchone()
+        return result[0] if result else 0
 
 @csrf_exempt
 @login_required

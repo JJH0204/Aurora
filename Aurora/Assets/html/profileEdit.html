@@ -38,9 +38,17 @@
                 {% csrf_token %}
                 <div class="profile-form">
                     <div class="profile-image-section">
-                        <img id="profile-preview" src="{% static 'img/default-profile.png' %}" alt="Profile Image">
-                        <input type="file" id="profile-image" accept="image/*" onchange="previewImage(this)">
-                        <label for="profile-image" class="btn btn-secondary">Change Profile Image</label>
+                        <img id="profile-preview" src="{% if user_info.profile_image %}
+                            /home/test/Aurora/Aurora/Data/Profile_images/{{ user_info.profile_image }}
+                        {% else %}
+                            {% static 'img/default-profile.png' %}
+                        {% endif %}" alt="Profile Image" class="profile-image">
+                        
+                        <form id="profile-image-form" enctype="multipart/form-data">
+                            {% csrf_token %}
+                            <input type="file" id="profile-image" name="profile_image" accept="image/*" style="display: none;" onchange="uploadProfileImage(this)">
+                            <label for="profile-image" class="btn btn-secondary">Change Profile Image</label>
+                        </form>
                     </div>
                     <div class="profile-info-section">
                         <div class="form-group">
@@ -49,15 +57,15 @@
                         </div>
                         <div class="form-group">
                             <label for="email">Email</label>
-                            <input type="email" id="email" class="form-control" value="{{ user_info.email }}" readonly>
+                            <input type="email" id="email" class="form-control" value="{{ user_info.email }}">
                         </div>
                         <div class="form-group">
                             <label for="bio">Bio</label>
-                            <textarea id="bio" class="form-control" rows="3">{{ user_info.bio }}</textarea>
+                            <textarea id="bio" class="form-control">{{ user_info.bio }}</textarea>
                         </div>
                         <div class="form-group">
-                            <button onclick="saveProfile()" class="btn btn-primary">Save Changes</button>
-                            <button onclick="window.location.href='/profile/'" class="btn btn-secondary">Cancel</button>
+                            <button type="button" class="btn btn-primary" onclick="saveProfile()">Save Changes</button>
+                            <button type="button" class="btn btn-secondary" onclick="window.location.href='/profile/'">Cancel</button>
                         </div>
                     </div>
                 </div>
@@ -71,13 +79,40 @@
             sidebar.classList.toggle('active');
         }
 
-        function previewImage(input) {
+        function uploadProfileImage(input) {
             if (input.files && input.files[0]) {
+                // 이미지 미리보기
                 const reader = new FileReader();
                 reader.onload = function(e) {
                     document.getElementById('profile-preview').src = e.target.result;
                 };
                 reader.readAsDataURL(input.files[0]);
+
+                // 이미지 업로드
+                const formData = new FormData();
+                formData.append('profile_image', input.files[0]);
+                
+                const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+                fetch('/api/update-profile/', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': csrftoken
+                    },
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        alert('프로필 이미지가 성공적으로 업데이트되었습니다.');
+                    } else {
+                        alert(data.message || '프로필 이미지 업데이트에 실패했습니다.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('프로필 이미지 업데이트 중 오류가 발생했습니다.');
+                });
             }
         }
 
@@ -152,6 +187,37 @@
                 });
             }
         }
+
+        function saveProfile() {
+            const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+            const formData = {
+                username: document.getElementById('username').value.trim(),
+                email: document.getElementById('email').value.trim(),
+                bio: document.getElementById('bio').value.trim()
+            };
+
+            fetch('/api/update-profile/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrftoken
+                },
+                body: JSON.stringify(formData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    alert('프로필이 성공적으로 업데이트되었습니다.');
+                    window.location.href = '/profile/';
+                } else {
+                    alert(data.message || '프로필 업데이트에 실패했습니다.');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('프로필 업데이트 중 오류가 발생했습니다.');
+            });
+        }
     </script>
 
     <style>
@@ -203,6 +269,31 @@
 
         .btn {
             margin-right: 1rem;
+        }
+
+        .profile-image-section {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .profile-image {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-bottom: 10px;
+        }
+
+        .btn-secondary {
+            background-color: #6c757d;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .btn-secondary:hover {
+            background-color: #5a6268;
         }
     </style>
 

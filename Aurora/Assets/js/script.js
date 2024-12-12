@@ -50,16 +50,20 @@ function createPostCard(post) {
             },
             body: JSON.stringify({ feed_id: postId })
         })
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
         .then(data => {
             if (data.is_liked !== undefined) {
                 // 좋아요 아이콘 변경
                 this.src = getImageUrl(`like_${data.is_liked ? 'on' : 'off'}.png`, true);
                 
                 // 좋아요 카운트 업데이트
-                const currentLikes = parseInt(likeCount.textContent);
-                likeCount.textContent = data.is_liked ? currentLikes + 1 : currentLikes - 1;
-                
+                likeCount.textContent = data.likes_count || 0;
+
                 // 애니메이션 적용
                 this.classList.remove('animate');
                 void this.offsetWidth;
@@ -72,10 +76,20 @@ function createPostCard(post) {
         })
         .catch(error => {
             console.error('좋아요 토글 중 오류:', error);
+            alert('좋아요 처리 중 오류가 발생했습니다.');
         });
     });
 
     return postCard;
+}
+
+// 날짜 포맷팅 함수 추가
+function formatDate(dateString) {
+    const date = new Date(dateString);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
 }
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -103,7 +117,8 @@ document.addEventListener('DOMContentLoaded', function() {
                         content: post.content,
                         userImage: post.userImage || 'people.png',
                         nickname: post.nickname,
-                        date: post.date,
+                        // 날짜 포맷팅 적용
+                        date: post.date ? formatDate(post.date) : '날짜 없음',
                         likes: post.likes || 0,
                         isLiked: likedPostIds.includes(post.id),
                         isStaticImage: post.imageUrl ? false : true
