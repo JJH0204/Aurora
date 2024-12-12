@@ -91,7 +91,7 @@
 <body>
     <!-- Header Section -->
     <div class="header">
-        <div class="search-container">
+        <!-- <div class="search-container">
             <input type="text" class="form-control search" placeholder="Aurora">
             <img src="{% static 'img/search.png' %}" alt="Search">
         </div>
@@ -99,15 +99,16 @@
             <button class="login-btn" onclick="confirmLogout()">Logout</button>
         {% else %}
             <button class="login-btn" onclick="window.location.href='/login/'">Login</button>
-        {% endif %}
+        {% endif %} -->
+        <button class="login-btn" onclick="window.location.href='/'">Back</button>
     </div>
 
     <!-- Side Menu -->
     <div class="side-menu">
         <button onclick="window.location.href='/'"><img src="{% static 'img/aurora_logo.png' %}" alt="Aurora Logo"></button>
-        <button onclick="window.location.href='/post/'"><img src="{% static 'img/post.png' %}" alt="Post"></button>
+        <!-- <button onclick="window.location.href='/post/'"><img src="{% static 'img/post.png' %}" alt="Post"></button>
         <button onclick="window.location.href='/profile/'"><img src="{% static 'img/people.png' %}" alt="Profile"></button>
-        <button onclick="window.location.href='/save/'"><img src="{% static 'img/save.png' %}" alt="Save"></button>
+        <button onclick="window.location.href='/save/'"><img src="{% static 'img/save.png' %}" alt="Save"></button> -->
     </div>
 
     <!-- Arrow Down -->

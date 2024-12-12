@@ -24,10 +24,10 @@
 
     <!-- Side Menu -->
     <div class="side-menu">
-        <button onclick="window.location.href='/'"><img src="{% static 'img/aurora_logo.png' %}" alt="Aurora Logo"></button>
-        <button onclick="window.location.href='/post/'"><img src="{% static 'img/post.png' %}" alt="Post"></button>
-        <button onclick="window.location.href='/profile/'"><img src="{% static 'img/people.png' %}" alt="Profile"></button>
-        <button onclick="window.location.href='/save/'"><img src="{% static 'img/save.png' %}" alt="Save"></button>
+        <button onclick="checkLoginAndNavigate('/')"><img src="{% static 'img/aurora_logo.png' %}" alt="Aurora Logo"></button>
+        <button onclick="checkLoginAndNavigate('/post/')"><img src="{% static 'img/post.png' %}" alt="Post"></button>
+        <button onclick="checkLoginAndNavigate('/profile/')"><img src="{% static 'img/people.png' %}" alt="Profile"></button>
+        <button onclick="checkLoginAndNavigate('/save/')"><img src="{% static 'img/save.png' %}" alt="Save"></button>
     </div>
 
     <!-- Arrow Down -->
@@ -44,6 +44,18 @@
     </div>
 
     <script>
+        function checkLoginAndNavigate(path) {
+            {% if not user.is_authenticated %}
+                if (path !== '/') {
+                    if (confirm('로그인이 필요한 서비스입니다. 로그인 페이지로 이동하시겠습니까?')) {
+                        window.location.href = '/login/';
+                    }
+                    return;
+                }
+            {% endif %}
+            window.location.href = path;
+        }
+
         function toggleButtonContainer() {
             const container = document.getElementById('buttonContainer');
             container.style.display = container.style.display === 'block' ? 'none' : 'block';
