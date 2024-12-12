@@ -44,6 +44,13 @@ def signup(request):
                 INSERT INTO USER_INFO (user_id, is_admin, is_official, username, bf_list)
                 VALUES (%s, %s, %s, %s, %s)
             """, [user.id, False, False, username, ""])
+            
+        # USER_ACCESS 테이블에 추가 정보 저장
+        with connection.cursor() as cursor:
+            cursor.execute("""
+                INSERT INTO USER_ACCESS (user_id, email, password)
+                VALUES (%s, %s, %s)
+            """, [user.id, email, password])  # 수정된 부분
 
         return JsonResponse({'message': '회원가입이 완료되었습니다.'})
 
@@ -268,47 +275,77 @@ def get_liked_posts(request):
         return JsonResponse({'message': '좋아요한 게시물을 불러오는 중 오류가 발생했습니다.'}, status=500)
 
 @csrf_exempt
-@require_http_methods(["POST"])
 def update_profile(request):
+    print("Method:", request.method)  # 요청 메소드 확인
+    
+    if request.method != 'POST':
+        return JsonResponse({'message': '잘못된 요청 방식입니다.'}, status=405)
+
     try:
-        print("Request method:", request.method)
-        print("Request body:", request.body)
+        # 요청 데이터 확인
+        print("Request body:", request.body.decode('utf-8'))
+        data = json.loads(request.body.decode('utf-8'))
         
-        data = json.loads(request.body)
         username = data.get('username')
         email = data.get('email')
         bio = data.get('bio', '')
+        
+        print(f"Received data - username: {username}, email: {email}, bio: {bio}")
 
         with connection.cursor() as cursor:
-            # USER_INFO 업데이트
-            cursor.execute("""
-                UPDATE USER_INFO 
-                SET username = %s 
-                WHERE user_id = 1
-            """, [username])
+            try:
+                # 현재 사용자 정보 확인
+                cursor.execute("SELECT * FROM USER_INFO WHERE user_id = 1")
+                user_info = cursor.fetchone()
+                print("Current user info:", user_info)
 
-            # USER_ACCESS 업데이트
-            cursor.execute("""
-                UPDATE USER_ACCESS 
-                SET email = %s 
-                WHERE user_id = 1
-            """, [email])
+                # USER_INFO 업데이트
+                cursor.execute("""
+                    UPDATE USER_INFO 
+                    SET username = %s 
+                    WHERE user_id = 1
+                """, [username])
+                print("USER_INFO updated")
 
-        return JsonResponse({
-            'status': 'success',
-            'message': '프로필이 업데이트되었습니다.',
-            'data': {
-                'username': username,
-                'email': email,
-                'bio': bio
-            }
-        })
+                # USER_ACCESS 업데이트
+                cursor.execute("""
+                    UPDATE USER_ACCESS 
+                    SET email = %s 
+                    WHERE user_id = 1
+                """, [email])
+                print("USER_ACCESS updated")
 
-    except Exception as e:
-        print("Error:", str(e))
+                return JsonResponse({
+                    'status': 'success',
+                    'message': '프로필이 성공적으로 업데이트되었습니다.',
+                    'data': {
+                        'username': username,
+                        'email': email,
+                        'bio': bio
+                    }
+                })
+
+            except Exception as db_error:
+                print("Database error:", str(db_error))
+                print("Traceback:", traceback.format_exc())
+                return JsonResponse({
+                    'status': 'error',
+                    'message': f'데이터베이스 오류: {str(db_error)}'
+                }, status=500)
+
+    except json.JSONDecodeError as e:
+        print("JSON decode error:", str(e))
         return JsonResponse({
             'status': 'error',
-            'message': str(e)
+            'message': '잘못된 JSON 형식입니다.'
+        }, status=400)
+    
+    except Exception as e:
+        print("Unexpected error:", str(e))
+        print("Traceback:", traceback.format_exc())
+        return JsonResponse({
+            'status': 'error',
+            'message': f'서버 오류: {str(e)}'
         }, status=500)
 
 @csrf_exempt

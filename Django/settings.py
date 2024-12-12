@@ -61,11 +61,15 @@ WSGI_APPLICATION = 'Django.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': os.environ.get('MYSQL_DATABASE', 'aurora'),
-        'USER': os.environ.get('MYSQL_USER', 'aurora'),
-        'PASSWORD': os.environ.get('MYSQL_PASSWORD', 'aurora123!'),
+        'NAME': 'aurora_db',
+        'USER': 'root',
+        'PASSWORD': 'rootpassword',
         'HOST': 'localhost',
         'PORT': '3306',
+        'OPTIONS': {
+            'charset': 'utf8mb4',
+            'use_unicode': True,
+        }
     }
 }
 
@@ -89,6 +93,7 @@ AUTH_PASSWORD_VALIDATORS = [
 LANGUAGE_CODE = 'ko-kr'
 TIME_ZONE = 'Asia/Seoul'
 USE_I18N = True
+USE_L10N = True
 USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
@@ -119,3 +124,6 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.BasicAuthentication',
     ],
 }
+
+# 인코딩 설정
+DEFAULT_CHARSET = 'utf-8'
