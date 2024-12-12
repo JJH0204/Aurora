@@ -1,5 +1,7 @@
 // 이미지 URL 생성 함수
 function getImageUrl(imagePath, isStatic = false) {
+    if (!imagePath) return '/static/img/default_post.png';
+    
     // 정적 이미지인 경우 static 경로 사용
     if (isStatic) {
         return `/static/img/${imagePath}`;
@@ -8,79 +10,265 @@ function getImageUrl(imagePath, isStatic = false) {
     return `/media/${imagePath}`;
 }
 
+// 시간 경과 계산 함수 추가
+function getTimeAgo(dateString) {
+    const now = new Date('2024-12-13T01:01:35+09:00');
+    const date = new Date(dateString);
+    const seconds = Math.floor((now - date) / 1000);
+    const minutes = Math.floor(seconds / 60);
+    const hours = Math.floor(minutes / 60);
+    const days = Math.floor(hours / 24);
+    const months = Math.floor(days / 30);
+    const years = Math.floor(days / 365);
+
+    if (seconds < 60) return `${seconds}초 전`;
+    if (minutes < 60) return `${minutes}분 전`;
+    if (hours < 24) return `${hours}시간 전`;
+    if (days < 30) return `${days}일 전`;
+    if (months < 12) return `${months}달 전`;
+    return `${years}년 전`;
+}
+
 // 포스트 카드 생성 함수
 function createPostCard(post) {
-    const postCard = document.createElement('div');
-    postCard.className = 'post-card';
-    
-    postCard.innerHTML = `
-        <div class="post-image">
-            <img src="${getImageUrl(post.imageUrl, post.isStaticImage)}" alt="Post Image">
-        </div>
-        <div class="post-content">
-            ${post.content}
-        </div>
-        <div class="post-footer">
-            <div class="post-user" onclick="window.location.href='/profile/${post.userId}/'">
-                <img src="${getImageUrl(post.userImage, true)}" alt="User" class="user-image">
-                <span class="nickname">${post.nickname}</span>
-            </div>
-            <div class="user-info">
-                <img src="${getImageUrl(`like_${post.isLiked ? 'on' : 'off'}.png`, true)}" 
-                     alt="Like" 
-                     class="like-icon"
-                     data-post-id="${post.id}"
-                     style="width: 24px; height: 24px; margin-left: 10px; cursor: pointer;">
-                <span class="like-count">${post.likes || 0}</span>
-            </div>
-            <div class="date">${post.date}</div>
-        </div>
-    `;
+    const card = document.createElement('div');
+    card.className = 'post-card';
 
-    // 좋아요 버튼 이벤트 리스너
-    const likeIcon = postCard.querySelector('.like-icon');
-    const likeCount = postCard.querySelector('.like-count');
-    likeIcon.addEventListener('click', function() {
+    // 헤더 영역 생성 (사용자 정보 + 좋아요)
+    const headerDiv = document.createElement('div');
+    headerDiv.className = 'post-header';
+    
+    // 사용자 정보 영역
+    const userInfoContainer = document.createElement('div');
+    userInfoContainer.className = 'user-info-container';
+    
+    const userImage = document.createElement('img');
+    userImage.src = getImageUrl(post.userImage, true);
+    userImage.alt = 'User';
+    userImage.className = 'user-image';
+    
+    const userTextInfo = document.createElement('div');
+    userTextInfo.className = 'user-text-info';
+    
+    // 사용자 이름 표시
+    const usernameSpan = document.createElement('span');
+    usernameSpan.className = 'username';
+    usernameSpan.textContent = `@${post.username}`;
+    
+    userTextInfo.appendChild(usernameSpan);
+    
+    userInfoContainer.appendChild(userImage);
+    userInfoContainer.appendChild(userTextInfo);
+    userInfoContainer.onclick = () => window.location.href = `/profile/${post.userId}/`;
+
+    // 좋아요 버튼 영역
+    const likeContainer = document.createElement('div');
+    likeContainer.className = 'like-container';
+    
+    const likeIcon = document.createElement('img');
+    likeIcon.src = getImageUrl(`like_${post.isLiked ? 'on' : 'off'}.png`, true);
+    likeIcon.alt = 'Like';
+    likeIcon.className = 'like-icon';
+    likeIcon.dataset.postId = post.id;
+    
+    const likeCount = document.createElement('span');
+    likeCount.className = 'like-count';
+    likeCount.textContent = post.likes || 0;
+    
+    likeContainer.appendChild(likeIcon);
+    likeContainer.appendChild(likeCount);
+
+    headerDiv.appendChild(userInfoContainer);
+    headerDiv.appendChild(likeContainer);
+    
+    card.appendChild(headerDiv);
+
+    // 미디어 슬라이더 생성
+    const mediaSlider = document.createElement('div');
+    mediaSlider.className = 'media-slider';
+    
+    const mediaContainer = document.createElement('div');
+    mediaContainer.className = 'media-container';
+    
+    // 미디어 파일들 추가
+    post.media_files.forEach((media, index) => {
+        const mediaWrapper = document.createElement('div');
+        mediaWrapper.className = 'media-wrapper';
+        
+        if (media.extension_type === 'mp4' || media.extension_type === 'mov') {
+            const video = document.createElement('video');
+            video.className = 'post-video';
+            video.src = `/media/${media.file_name}`;
+            video.controls = true;
+            mediaWrapper.appendChild(video);
+        } else {
+            const img = document.createElement('img');
+            img.className = 'post-image';
+            img.src = `/media/${media.file_name}`;
+            img.alt = 'Post image';
+            mediaWrapper.appendChild(img);
+        }
+        
+        mediaContainer.appendChild(mediaWrapper);
+    });
+    
+    mediaSlider.appendChild(mediaContainer);
+
+    // 여러 미디어 파일이 있는 경우에만 네비게이션 추가
+    if (post.media_files.length > 1) {
+        const prevBtn = document.createElement('button');
+        prevBtn.className = 'nav-btn prev-btn';
+        prevBtn.innerHTML = '&#10094;';
+        mediaSlider.appendChild(prevBtn);
+        
+        const nextBtn = document.createElement('button');
+        nextBtn.className = 'nav-btn next-btn';
+        nextBtn.innerHTML = '&#10095;';
+        mediaSlider.appendChild(nextBtn);
+        
+        const pageIndicator = document.createElement('div');
+        pageIndicator.className = 'page-indicator';
+        post.media_files.forEach((_, index) => {
+            const dot = document.createElement('span');
+            dot.className = `dot ${index === 0 ? 'active' : ''}`;
+            pageIndicator.appendChild(dot);
+        });
+        mediaSlider.appendChild(pageIndicator);
+        
+        // 슬라이드 상태 및 기능
+        let currentSlide = 0;
+        const totalSlides = post.media_files.length;
+        
+        const updateSlide = (newIndex) => {
+            currentSlide = newIndex;
+            mediaContainer.style.transform = `translateX(-${currentSlide * 100}%)`;
+            
+            const dots = pageIndicator.querySelectorAll('.dot');
+            dots.forEach((dot, index) => {
+                dot.classList.toggle('active', index === currentSlide);
+            });
+            
+            const videos = mediaContainer.querySelectorAll('video');
+            videos.forEach((video, index) => {
+                if (index === currentSlide) {
+                    video.play().catch(() => {});
+                } else {
+                    video.pause();
+                    video.currentTime = 0;
+                }
+            });
+        };
+        
+        prevBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const newIndex = (currentSlide - 1 + totalSlides) % totalSlides;
+            updateSlide(newIndex);
+        });
+        
+        nextBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const newIndex = (currentSlide + 1) % totalSlides;
+            updateSlide(newIndex);
+        });
+        
+        pageIndicator.addEventListener('click', (e) => {
+            if (e.target.classList.contains('dot')) {
+                const dots = Array.from(pageIndicator.children);
+                const newIndex = dots.indexOf(e.target);
+                updateSlide(newIndex);
+            }
+        });
+    }
+    
+    card.appendChild(mediaSlider);
+
+    // 게시글 내용 영역
+    if (post.desc || post.content) {
+        const contentDiv = document.createElement('div');
+        contentDiv.className = 'post-content';
+        
+        // description(desc)이 있으면 먼저 표시
+        if (post.desc) {
+            const descriptionP = document.createElement('p');
+            descriptionP.className = 'post-description';
+            descriptionP.textContent = post.desc;
+            contentDiv.appendChild(descriptionP);
+        }
+        
+        // content가 있으면 그 다음에 표시
+        if (post.content) {
+            const contentP = document.createElement('p');
+            contentP.className = 'post-text';
+            contentP.textContent = post.content;
+            contentDiv.appendChild(contentP);
+        }
+        
+        card.appendChild(contentDiv);
+    }
+
+    // 푸터 영역 (날짜/시간)
+    const footerDiv = document.createElement('div');
+    footerDiv.className = 'post-footer';
+    
+    const dateDiv = document.createElement('div');
+    dateDiv.className = 'date';
+    const timeAgo = getTimeAgo(post.date);
+    const fullDate = new Date(post.date).toLocaleString('ko-KR');
+    dateDiv.textContent = `${timeAgo} (${fullDate})`;
+    
+    footerDiv.appendChild(dateDiv);
+    card.appendChild(footerDiv);
+
+    // 좋아요 기능
+    likeIcon.addEventListener('click', function(e) {
+        e.stopPropagation();
         const postId = this.dataset.postId;
         
-        fetch('/api/toggle-like', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ feed_id: postId })
-        })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
-            return response.json();
-        })
-        .then(data => {
-            if (data.is_liked !== undefined) {
-                // 좋아요 아이콘 변경
-                this.src = getImageUrl(`like_${data.is_liked ? 'on' : 'off'}.png`, true);
-                
-                // 좋아요 카운트 업데이트
-                likeCount.textContent = data.likes_count || 0;
-
-                // 애니메이션 적용
-                this.classList.remove('animate');
-                void this.offsetWidth;
-                this.classList.add('animate');
-                
-                setTimeout(() => {
-                    this.classList.remove('animate');
-                }, 500);
-            }
-        })
-        .catch(error => {
-            console.error('좋아요 토글 중 오류:', error);
-            alert('좋아요 처리 중 오류가 발생했습니다.');
-        });
+        fetch('/check-auth/')
+            .then(response => response.json())
+            .then(data => {
+                if (!data.isAuthenticated) {
+                    alert('좋아요를 누르려면 로그인이 필요합니다.');
+                    return;
+                }
+                fetch('/api/toggle-like', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ feed_id: postId })
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.is_liked !== undefined) {
+                        this.src = getImageUrl(`like_${data.is_liked ? 'on' : 'off'}.png`, true);
+                        likeCount.textContent = data.likes_count || 0;
+                        
+                        this.classList.remove('animate');
+                        void this.offsetWidth;
+                        this.classList.add('animate');
+                        
+                        setTimeout(() => {
+                            this.classList.remove('animate');
+                        }, 500);
+                    }
+                })
+                .catch(error => {
+                    console.error('좋아요 토글 중 오류:', error);
+                    alert('좋아요 처리 중 오류가 발생했습니다.');
+                });
+            })
+            .catch(error => {
+                console.error('인증 확인 중 오류 발생:', error);
+            });
     });
 
-    return postCard;
+    return card;
 }
 
 // 날짜 포맷팅 함수 추가
@@ -95,12 +283,19 @@ function formatDate(dateString) {
 document.addEventListener('DOMContentLoaded', function() {
     const feed = document.querySelector('.feed');
     
-    // 좋아요한 게시물 ID 목록 가져오기
-    fetch('/api/check-liked-posts')
+    // 먼저 인증 상태 확인
+    fetch('/check-auth/')
         .then(response => response.json())
-        .then(likedData => {
-            const likedPostIds = likedData.liked_posts;
-
+        .then(authData => {
+            // 로그인한 경우에만 좋아요 목록 가져오기
+            if (authData.isAuthenticated) {
+                return fetch('/api/check-liked-posts')
+                    .then(response => response.json())
+                    .then(likedData => likedData.liked_posts);
+            }
+            return [];  // 로그인하지 않은 경우 빈 배열 반환
+        })
+        .then(likedPostIds => {
             // 서버에서 피드 게시물 가져오기
             return fetch('/api/feed-posts')
                 .then(response => {
@@ -113,15 +308,14 @@ document.addEventListener('DOMContentLoaded', function() {
                     // 서버에서 받은 데이터로 포스트 매핑
                     const posts = data.posts.map(post => ({
                         id: post.id,
-                        imageUrl: post.imageUrl || 'default_post.png',
+                        media_files: post.media_files || [],
                         content: post.content,
                         userImage: post.userImage || 'people.png',
                         nickname: post.nickname,
-                        // 날짜 포맷팅 적용
+                        userId: post.userId,
                         date: post.date ? formatDate(post.date) : '날짜 없음',
                         likes: post.likes || 0,
                         isLiked: likedPostIds.includes(post.id),
-                        isStaticImage: post.imageUrl ? false : true
                     }));
 
                     // 기존 createPostCard 함수 사용하여 포스트 카드 생성
@@ -134,7 +328,7 @@ document.addEventListener('DOMContentLoaded', function() {
         .catch(error => {
             console.error('피드 게시물을 불러오는 중 오류 발생:', error);
             const feed = document.querySelector('.feed');
-            feed.innerHTML = `<p>게시물을 불러올 수 없습니다: ${error.message}</p>`;
+            feed.innerHTML = '<p class="error-message">게시물을 불러올 수 없습니다. 잠시 후 다시 시도해주세요.</p>';
         });
 });
 
@@ -153,14 +347,13 @@ document.addEventListener('DOMContentLoaded', function() {
             // 서버에서 받은 데이터로 포스트 매핑
             const posts = data.posts.map(post => ({
                 id: post.id,
-                imageUrl: post.imageUrl || 'default_post.png',
+                media_files: post.media_files || [],
                 content: post.content,
                 userImage: post.userImage || 'people.png',
                 nickname: post.nickname,
                 date: post.date,
                 likes: post.likes || 0,
                 isLiked: false,
-                isStaticImage: post.imageUrl ? false : true
             }));
 
             // 기존 createPostCard 함수 사용하여 포스트 카드 생성

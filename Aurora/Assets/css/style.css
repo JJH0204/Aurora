@@ -188,129 +188,61 @@ body {
 
 /* 포스트 카드 스타일 */
 .post-card {
-    scroll-snap-align: start;
-    background: #f7f7fb;
-    border-radius: 30px;
-    padding: 20px;
-    border: 2px solid #d4cef7;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    margin-bottom: 30px;
-    height: calc(104vh - 200px);
-    display: flex;
-    flex-direction: column;
-    position: relative;
-}
-
-.post-card:last-child {
-    margin-bottom: 0;
-}
-
-.post-image {
-    width: 100%;
-    height: 450px;
+    background: #fff;
+    border-radius: 15px;
     margin-bottom: 20px;
-    flex-shrink: 0;
+    overflow: hidden;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
 
-.post-image img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-
-.post-content {
-    padding: 10px 0;
-    color: #6c7293;
-    line-height: 1.6;
-    font-size: 16px;
-    flex-grow: 1;
-    overflow-y: auto;
-    pointer-events: auto;
-}
-
-.post-footer {
+.post-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding-top: 15px;
-    border-top: 1px solid #e8e6f7;
-    flex-shrink: 0;
-    margin-top: auto;
+    padding: 12px 15px;
+    border-bottom: 1px solid #eee;
 }
 
-.post-user {
-    display: flex;
-    align-items: center;
-    margin-right: 0;
-    cursor: pointer;
-}
-
-.user-info {
+.user-info-container {
     display: flex;
     align-items: center;
     gap: 10px;
-}
-
-.user-image {
-    width: 60px;
-    height: 60px;
-    border-radius: 50%;
-    object-fit: cover;
-    border: 2px solid #d4cef7;
-}
-
-.nickname {
-    background: #a193e7;
-    color: #f7f7fb;
-    padding: 10px 25px;
-    border-radius: 25px;
-    font-size: 15px;
-}
-
-.date {
-    background: #a193e7;
-    color: #f7f7fb;
-    padding: 10px 25px;
-    border-radius: 25px;
-    font-size: 15px;
-}
-
-.post {
-    width: 100%;
-    height: 600px;
-    overflow-y: auto;
-}
-
-.postContent {
-    height: 100%;
-    object-fit: contain;
-}
-
-/* 스크롤바 스타일링 */
-.post-content::-webkit-scrollbar {
-    width: 6px;
-}
-
-.post-content::-webkit-scrollbar-track {
-    background: #f0f2f9;
-    border-radius: 3px;
-}
-
-.post-content::-webkit-scrollbar-thumb {
-    background: #a193e7;
-    border-radius: 3px;
-}
-
-.like-button {
-    background: none;
-    border: none;
-    padding: 0;
     cursor: pointer;
 }
 
+.user-image {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.user-text-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.nickname {
+    font-weight: 600;
+    color: #262626;
+    font-size: 14px;
+    margin-bottom: 2px;
+}
+
+.username {
+    font-size: 12px;
+    color: #8e8e8e;
+}
+
+.like-container {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
 .like-icon {
-    width: 30px;
-    height: 30px;
+    width: 24px;
+    height: 24px;
     cursor: pointer;
     transition: transform 0.2s ease;
 }
@@ -319,14 +251,227 @@ body {
     transform: scale(1.1);
 }
 
-.like-icon.animate {
-    animation: heartShake 0.5s ease;
+.like-count {
+    font-size: 14px;
+    color: #262626;
 }
 
-@keyframes heartShake {
+.post-content {
+    padding: 12px 15px;
+    font-size: 14px;
+    line-height: 1.5;
+    color: #262626;
+}
+
+.post-description {
+    margin-bottom: 8px;
+    font-weight: 500;
+}
+
+.post-text {
+    margin: 0;
+    white-space: pre-wrap;
+}
+
+.post-footer {
+    padding: 12px 15px;
+    border-top: 1px solid #eee;
+}
+
+.date {
+    font-size: 12px;
+    color: #8e8e8e;
+    text-align: right;
+}
+
+/* 포스트 이미지/비디오 컨테이너 */
+.post-image,
+.post-media {
+    position: relative;
+    width: 100%;
+    min-height: 400px;
+    max-height: 600px;
+    margin-bottom: 15px;
+    border-radius: 20px;
+    overflow: hidden;
+}
+
+/* 이미지 스타일 */
+.post-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+/* 비디오 컨테이너 스타일 */
+.post-media {
+    background-color: transparent;
+}
+
+/* 비디오 스타일 */
+.post-video {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+}
+
+/* 비디오 컨트롤 스타일링 - 최소화 */
+.post-video::-webkit-media-controls-enclosure {
+    background: transparent;
+}
+
+.post-video::-webkit-media-controls-panel {
+    background: linear-gradient(to top, rgba(0,0,0,0.4), transparent);
+}
+
+/* 미디어 슬라이더 스타일 */
+.media-slider {
+    position: relative;
+    width: 100%;
+    overflow: hidden;
+    background: #000;
+    aspect-ratio: 16/9;
+}
+
+.media-container {
+    display: flex;
+    transition: transform 0.3s ease;
+    height: 100%;
+    width: 100%;
+}
+
+.media-wrapper {
+    flex: 0 0 100%;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+}
+
+/* 비디오 스타일 */
+.post-video {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    background: #000;
+}
+
+/* 이미지 스타일 */
+.post-image {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    background: #000;
+}
+
+/* 네비게이션 버튼 */
+.nav-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(255, 255, 255, 0.5);
+    border: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    cursor: pointer;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    color: #000;
+    transition: background-color 0.3s;
+}
+
+.nav-btn:hover {
+    background: rgba(255, 255, 255, 0.8);
+}
+
+.prev-btn {
+    left: 10px;
+}
+
+.next-btn {
+    right: 10px;
+}
+
+/* 페이지 인디케이터 */
+.page-indicator {
+    position: absolute;
+    bottom: 60px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 8px;
+    z-index: 2;
+}
+
+.dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.5);
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.dot.active {
+    background: #fff;
+}
+
+/* 비디오 컨트롤 커스터마이징 */
+.post-video::-webkit-media-controls {
+    display: flex !important;
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    height: 48px;
+    background: linear-gradient(transparent, rgba(0,0,0,0.7));
+}
+
+.post-video::-webkit-media-controls-panel {
+    display: flex !important;
+    padding: 0 12px;
+}
+
+.post-video::-webkit-media-controls-play-button {
+    display: flex !important;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+}
+
+.post-video::-webkit-media-controls-timeline {
+    display: flex !important;
+    margin: 0 16px;
+}
+
+.post-video::-webkit-media-controls-current-time-display,
+.post-video::-webkit-media-controls-time-remaining-display {
+    display: flex !important;
+    padding: 0;
+    font-size: 12px;
+}
+
+.post-video::-webkit-media-controls-mute-button,
+.post-video::-webkit-media-controls-fullscreen-button {
+    display: flex !important;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+}
+
+/* 비디오 컨트롤이 표시될 때 페이지 인디케이터 위치 조정 */
+.media-wrapper:hover .page-indicator {
+    bottom: 70px;
+}
+
+@keyframes likeAnimation {
     0% { transform: scale(1); }
-    25% { transform: scale(1.2) rotate(-15deg); }
-    50% { transform: scale(1.2) rotate(15deg); }
-    75% { transform: scale(1.2) rotate(-15deg); }
+    50% { transform: scale(1.2); }
     100% { transform: scale(1); }
 }

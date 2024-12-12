@@ -72,19 +72,22 @@ def login(request):
         if not all([email, password]):
             return JsonResponse({'message': '이메일과 비밀번호를 모두 입력해주세요.'}, status=400)
 
-        # 이메일로 사용자 찾기
-        try:
-            user = User.objects.get(email=email)
-        except User.DoesNotExist:
-            return JsonResponse({'message': '이메일 또는 비밀번호가 올바르지 않습니다.'}, status=401)
-
-        # 비밀번호 확인 및 로그인
-        user = authenticate(username=user.username, password=password)
-        if user is not None:
-            auth_login(request, user)
-            return JsonResponse({'message': '로그인 성공'})
-        else:
-            return JsonResponse({'message': '이메일 또는 비밀번호가 올바르지 않습니다.'}, status=401)
+        # USER_ACCESS 테이블에서 사용자 확인
+        with connection.cursor() as cursor:
+            cursor.execute("""
+                SELECT ua.user_id, ua.password, u.username 
+                FROM USER_ACCESS ua
+                JOIN auth_user u ON ua.user_id = u.id
+                WHERE ua.email = %s
+            """, [email])
+            result = cursor.fetchone()
+            
+            if result and result[1] == password:  # 비밀번호 일치
+                user = User.objects.get(id=result[0])
+                auth_login(request, user)
+                return JsonResponse({'message': '로그인 성공'})
+            else:
+                return JsonResponse({'message': '이메일 또는 비밀번호가 올바르지 않습니다.'}, status=401)
 
     except Exception as e:
         print(f"Error during login: {str(e)}")
@@ -138,7 +141,11 @@ def create_post(request):
                 file_name = f'post_{new_feed_id}_{i}{os.path.splitext(image.name)[1]}'
                 
                 # 파일 저장
-                with open(os.path.join(settings.MEDIA_ROOT, file_name), 'wb+') as destination:
+                save_path = os.path.join(settings.MEDIA_ROOT)
+                if not os.path.exists(save_path):
+                    os.makedirs(save_path)
+                    
+                with open(os.path.join(save_path, file_name), 'wb+') as destination:
                     for chunk in image.chunks():
                         destination.write(chunk)
 
@@ -278,7 +285,7 @@ def get_profile(request, user_id=None):
             return JsonResponse({
                 'username': user_data[0],
                 'email': user_data[1],
-                'profile_image': user_data[2] if user_data[2] else None
+                'profile_image': f'/media/{user_data[2]}' if user_data[2] else None
             })
     except Exception as e:
         print(f"Error getting profile: {str(e)}")
@@ -353,41 +360,56 @@ def update_profile(request):
 
 @csrf_exempt
 def get_feed_posts(request):
-    try:
-        with connection.cursor() as cursor:
-            cursor.execute("""
+    with connection.cursor() as cursor:
+        cursor.execute("""
+            WITH RankedMedia AS (
                 SELECT 
-                    f.feed_id, 
-                    fd.`desc`, 
-                    ui.username,  # username을 user_id 대신 사용
+                    mf.feed_id,
                     mf.file_name,
-                    f.like_count,
-                    f.feed_type,
-                    ui.user_id
-                FROM FEED_INFO f
-                LEFT JOIN FEED_DESC fd ON f.feed_id = fd.feed_id
-                LEFT JOIN USER_INFO ui ON f.user_id = ui.user_id
-                LEFT JOIN MEDIA_FILE mf ON f.feed_id = mf.feed_id
-                GROUP BY f.feed_id
-                ORDER BY f.feed_id DESC
-            """)
+                    mf.extension_type,
+                    ROW_NUMBER() OVER (PARTITION BY mf.feed_id ORDER BY mf.media_number) as rn
+                FROM MEDIA_FILE mf
+            )
+            SELECT 
+                f.feed_id, 
+                fd.`desc`, 
+                ui.username,
+                rm.file_name,
+                f.like_count,
+                f.feed_type,
+                ui.user_id,
+                rm.extension_type
+            FROM FEED_INFO f
+            LEFT JOIN FEED_DESC fd ON f.feed_id = fd.feed_id
+            LEFT JOIN USER_INFO ui ON f.user_id = ui.user_id
+            LEFT JOIN RankedMedia rm ON f.feed_id = rm.feed_id AND rm.rn = 1
+            ORDER BY f.feed_id DESC
+        """)
+        
+        columns = [col[0] for col in cursor.description]
+        feeds = [dict(zip(columns, row)) for row in cursor.fetchall()]
+        
+        # 로그인한 사용자의 좋아요 상태 확인
+        liked_posts = set()
+        if request.user.is_authenticated:
+            cursor.execute("""
+                SELECT feed_id FROM FEED_LIKE WHERE user_id = %s
+            """, [request.user.id])
+            liked_posts = {row[0] for row in cursor.fetchall()}
+        
+        for feed in feeds:
+            feed['isLiked'] = feed['feed_id'] in liked_posts
             
-            feeds = cursor.fetchall()
-            
-            return JsonResponse({
-                'posts': [{
-                    'id': feed[0],
-                    'content': feed[1] or '',
-                    'nickname': feed[2] or 'Unknown',  # username 표시
-                    'imageUrl': feed[3] or 'default_post.png',
-                    'likes': feed[4] or 0,
-                    'userId': feed[6]  # 프로필 링크용 user_id
-                } for feed in feeds]
-            })
-
-    except Exception as e:
-        print(f"Error fetching feed posts: {str(e)}")
-        return JsonResponse({'message': '피드를 불러오는 중 오류가 발생했습니다.'}, status=500)
+            # 각 게시물의 모든 미디어 파일 가져오기
+            cursor.execute("""
+                SELECT file_name, extension_type
+                FROM MEDIA_FILE
+                WHERE feed_id = %s
+            """, [feed['feed_id']])
+            media_files = cursor.fetchall()
+            feed['media_files'] = [{'file_name': file[0], 'extension_type': file[1]} for file in media_files]
+        
+        return JsonResponse({'posts': feeds}, json_dumps_params={'ensure_ascii': False})
 
 @csrf_exempt
 @login_required
@@ -493,3 +515,9 @@ def check_liked_posts(request):
     except Exception as e:
         print(f"Error checking liked posts: {str(e)}")
         return JsonResponse({'message': '좋아요한 게시물 확인 중 오류가 발생했습니다.'}, status=500)
+
+@csrf_exempt
+def check_auth(request):
+    return JsonResponse({
+        'isAuthenticated': request.user.is_authenticated
+    })
