@@ -24,7 +24,7 @@
         }
 
         .post-container {
-            max-width: 1200px;
+            max-width: 600px;
             width: 100%;
             height: auto;
             margin: 0 auto;
@@ -34,21 +34,23 @@
         .main-content {
             padding-top: 10px;
             height: 100%;
-            width: 200%;
+            width: 100%;
         }
     
         .upload-container {
-            max-width: 1200px;
+            max-width: 100%;
             min-height: 700px;
             background: white;
             border-radius: 20px;
             padding: 20px;
             display: flex;
+            flex-direction: column;
             gap: 20px;
             border: 2px solid transparent;
             background-clip: padding-box;
             position: relative;
             box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+            margin: 0 auto;
         }
     
         .upload-container::before {
@@ -65,22 +67,22 @@
         }
     
         .image-section {
-            flex: 6;
-            min-width: 0;
+            flex: 1;
+            min-height: 400px;
         }
     
         .text-section {
             flex: 1;
-            min-width: 340px;
-            border-left: 1px solid #dbdbdb;
-            padding-left: 20px;
-            display: flex;
-            flex-direction: column;
+            min-height: 300px;
+            border-top: 1px solid #dbdbdb;
+            border-left: none;
+            padding-top: 20px;
+            padding-left: 0;
         }
     
         .image-preview {
+            height: 400px;
             width: 100%;
-            height: 600px;
             background: #fafafa;
             display: flex;
             justify-content: center;
@@ -128,7 +130,7 @@
     
         textarea {
             width: 100%;
-            height: 400px;
+            height: 200px;
             padding: 10px;
             border: none;
             resize: none;
