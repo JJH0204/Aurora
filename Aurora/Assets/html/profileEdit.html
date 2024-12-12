@@ -34,31 +34,34 @@
     <div class="main-content">
         <div class="profile-edit-container">
             <h2>Edit Profile</h2>
-            <div class="profile-form">
-                <div class="profile-image-section">
-                    <img id="profile-preview" src="{% static 'img/default-profile.png' %}" alt="Profile Image">
-                    <input type="file" id="profile-image" accept="image/*" onchange="previewImage(this)">
-                    <label for="profile-image" class="btn btn-secondary">Change Profile Image</label>
+            <form id="profile-form">
+                {% csrf_token %}
+                <div class="profile-form">
+                    <div class="profile-image-section">
+                        <img id="profile-preview" src="{% static 'img/default-profile.png' %}" alt="Profile Image">
+                        <input type="file" id="profile-image" accept="image/*" onchange="previewImage(this)">
+                        <label for="profile-image" class="btn btn-secondary">Change Profile Image</label>
+                    </div>
+                    <div class="profile-info-section">
+                        <div class="form-group">
+                            <label for="username">Username</label>
+                            <input type="text" id="username" class="form-control" value="{{ user_info.username }}">
+                        </div>
+                        <div class="form-group">
+                            <label for="email">Email</label>
+                            <input type="email" id="email" class="form-control" value="{{ user_info.email }}" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label for="bio">Bio</label>
+                            <textarea id="bio" class="form-control" rows="3">{{ user_info.bio }}</textarea>
+                        </div>
+                        <div class="form-group">
+                            <button onclick="saveProfile()" class="btn btn-primary">Save Changes</button>
+                            <button onclick="window.location.href='/profile/'" class="btn btn-secondary">Cancel</button>
+                        </div>
+                    </div>
                 </div>
-                <div class="profile-info-section">
-                    <div class="form-group">
-                        <label for="username">Username</label>
-                        <input type="text" id="username" class="form-control" value="{{ user_info.username }}">
-                    </div>
-                    <div class="form-group">
-                        <label for="email">Email</label>
-                        <input type="email" id="email" class="form-control" value="{{ user_info.email }}" readonly>
-                    </div>
-                    <div class="form-group">
-                        <label for="bio">Bio</label>
-                        <textarea id="bio" class="form-control" rows="3">{{ user_info.bio }}</textarea>
-                    </div>
-                    <div class="form-group">
-                        <button onclick="saveProfile()" class="btn btn-primary">Save Changes</button>
-                        <button onclick="window.location.href='/profile/'" class="btn btn-secondary">Cancel</button>
-                    </div>
-                </div>
-            </div>
+            </form>
         </div>
     </div>
 
@@ -79,6 +82,19 @@
         }
 
         document.addEventListener('DOMContentLoaded', function() {
+            // 프로필 정보 가져오기
+            fetch('/api/get-profile-info/')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        document.getElementById('username').value = data.data.username;
+                        document.getElementById('email').value = data.data.email;
+                        document.getElementById('bio').value = data.data.bio;
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+
+            // Save Changes 버튼 이벤트
             const saveButton = document.querySelector('.btn-primary');
             if (saveButton) {
                 saveButton.addEventListener('click', function(e) {

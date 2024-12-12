@@ -282,6 +282,38 @@ def get_liked_posts(request):
         return JsonResponse({'message': '좋아요한 게시물을 불러오는 중 오류가 발생했습니다.'}, status=500)
 
 @csrf_exempt
+def get_profile_info(request):
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("""
+                SELECT ui.username, ua.email, ui.bio
+                FROM USER_INFO ui
+                JOIN USER_ACCESS ua ON ui.user_id = ua.user_id
+                WHERE ui.user_id = %s
+            """, [1])  # 현재는 임시로 user_id = 1 사용
+            
+            user_info = cursor.fetchone()
+            if user_info:
+                return JsonResponse({
+                    'status': 'success',
+                    'data': {
+                        'username': user_info[0],
+                        'email': user_info[1],
+                        'bio': user_info[2] or ''
+                    }
+                })
+            return JsonResponse({
+                'status': 'error',
+                'message': '사용자 정보를 찾을 수 없습니다.'
+            }, status=404)
+    except Exception as e:
+        print(f"Error getting profile info: {str(e)}")
+        return JsonResponse({
+            'status': 'error',
+            'message': '프로필 정보를 가져오는 중 오류가 발생했습니다.'
+        }, status=500)
+
+@csrf_exempt
 def update_profile(request):
     if request.method == 'POST':
         try:
@@ -290,53 +322,31 @@ def update_profile(request):
             new_email = data.get('email')
             new_bio = data.get('bio', '')
 
-            with connection.cursor() as cursor:
-                # 현재 로그인된 사용자의 user_id 가져오기
-                cursor.execute("""
-                    SELECT user_id FROM USER_INFO 
-                    WHERE username = 'test'
-                """)
-                result = cursor.fetchone()
-                if not result:
-                    return JsonResponse({
-                        'status': 'error',
-                        'message': '사용자를 찾을 수 없습니다.'
-                    }, status=404)
-                
-                user_id = result[0]
+            # Django 모델을 사용하도록 수정
+            try:
+                user_info = UserInfo.objects.get(user_id=1)  # 현재 로그인된 사용자 ID로 수정 필요
+                user_info.username = new_username
+                user_info.save()
 
-                # USER_INFO 테이블 업데이트
-                cursor.execute("""
-                    UPDATE USER_INFO 
-                    SET username = %s 
-                    WHERE user_id = %s
-                """, [new_username, user_id])
-
-                # USER_ACCESS 테이블 업데이트
-                cursor.execute("""
-                    UPDATE USER_ACCESS 
-                    SET email = %s 
-                    WHERE user_id = %s
-                """, [new_email, user_id])
-
-                print(f"Updated username to: {new_username}")  # 디버깅용
-                print(f"Updated email to: {new_email}")       # 디버깅용
+                user_access = UserAccess.objects.get(user_id=1)
+                user_access.email = new_email
+                user_access.save()
 
                 return JsonResponse({
                     'status': 'success',
-                    'message': '프로필이 성공적으로 업데이트되었습니다.',
-                    'data': {
-                        'username': new_username,
-                        'email': new_email,
-                        'bio': new_bio
-                    }
+                    'message': '프로필이 성공적으로 업데이트되었습니다.'
                 })
+            except UserInfo.DoesNotExist:
+                return JsonResponse({
+                    'status': 'error',
+                    'message': '사용자를 찾을 수 없습니다.'
+                }, status=404)
 
         except Exception as e:
             print("Error during profile update:", str(e))
             return JsonResponse({
                 'status': 'error',
-                'message': f'업데이트 중 오류가 발생했습니다: {str(e)}'
+                'message': '프로필 업데이트 중 오류가 발생했습니다.'
             }, status=500)
 
     return JsonResponse({'message': '잘못된 요청 방식입니다.'}, status=405)
@@ -390,50 +400,53 @@ def toggle_like(request):
         feed_id = data.get('feed_id')
         user_id = request.user.id
 
-        with connection.cursor() as cursor:
+        with transaction.atomic():
             # 이미 좋아요를 눌렀는지 확인
-            cursor.execute("""
-                SELECT * FROM FEED_LIKE 
-                WHERE user_id = %s AND feed_id = %s
-            """, [user_id, feed_id])
-            
-            existing_like = cursor.fetchone()
-
-            if existing_like:
-                # 좋아요 취소
+            with connection.cursor() as cursor:
                 cursor.execute("""
-                    DELETE FROM FEED_LIKE 
+                    SELECT COUNT(*) FROM FEED_LIKE 
                     WHERE user_id = %s AND feed_id = %s
                 """, [user_id, feed_id])
+                is_already_liked = cursor.fetchone()[0] > 0
+
+            if is_already_liked:
+                # 좋아요 취소
+                with connection.cursor() as cursor:
+                    cursor.execute("""
+                        DELETE FROM FEED_LIKE 
+                        WHERE user_id = %s AND feed_id = %s
+                    """, [user_id, feed_id])
+                    
+                    # FEED_INFO의 like_count 감소
+                    cursor.execute("""
+                        UPDATE FEED_INFO 
+                        SET like_count = like_count - 1 
+                        WHERE feed_id = %s
+                    """, [feed_id])
                 
-                # 좋아요 카운트 감소
-                cursor.execute("""
-                    UPDATE FEED_INFO 
-                    SET like_count = like_count - 1 
-                    WHERE feed_id = %s
-                """, [feed_id])
-                
-                is_liked = False
+                return JsonResponse({
+                    'message': '좋아요 취소됨', 
+                    'is_liked': False
+                })
             else:
                 # 좋아요 추가
-                cursor.execute("""
-                    INSERT INTO FEED_LIKE (user_id, feed_id, like_date)
-                    VALUES (%s, %s, NOW())
-                """, [user_id, feed_id])
+                with connection.cursor() as cursor:
+                    cursor.execute("""
+                        INSERT INTO FEED_LIKE (user_id, feed_id, like_date) 
+                        VALUES (%s, %s, NOW())
+                    """, [user_id, feed_id])
+                    
+                    # FEED_INFO의 like_count 증가
+                    cursor.execute("""
+                        UPDATE FEED_INFO 
+                        SET like_count = like_count + 1 
+                        WHERE feed_id = %s
+                    """, [feed_id])
                 
-                # 좋아요 카운트 증가
-                cursor.execute("""
-                    UPDATE FEED_INFO 
-                    SET like_count = like_count + 1 
-                    WHERE feed_id = %s
-                """, [feed_id])
-                
-                is_liked = True
-
-        return JsonResponse({
-            'message': '좋아요 상태 변경 성공', 
-            'is_liked': is_liked
-        })
+                return JsonResponse({
+                    'message': '좋아요 완료', 
+                    'is_liked': True
+                })
 
     except Exception as e:
         print(f"Error during like toggle: {str(e)}")
@@ -448,15 +461,14 @@ def check_liked_posts(request):
         with connection.cursor() as cursor:
             # 사용자가 좋아요한 게시물 ID 목록 조회
             cursor.execute("""
-                SELECT feed_id 
-                FROM FEED_LIKE 
+                SELECT feed_id FROM FEED_LIKE 
                 WHERE user_id = %s
             """, [user_id])
             
-            liked_posts = [row[0] for row in cursor.fetchall()]
+            liked_feed_ids = [row[0] for row in cursor.fetchall()]
             
         return JsonResponse({
-            'liked_posts': liked_posts
+            'liked_posts': liked_feed_ids
         })
 
     except Exception as e:

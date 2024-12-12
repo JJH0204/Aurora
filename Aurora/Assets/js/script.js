@@ -78,6 +78,51 @@ function createPostCard(post) {
     return postCard;
 }
 
+document.addEventListener('DOMContentLoaded', function() {
+    const feed = document.querySelector('.feed');
+    
+    // 좋아요한 게시물 ID 목록 가져오기
+    fetch('/api/check-liked-posts')
+        .then(response => response.json())
+        .then(likedData => {
+            const likedPostIds = likedData.liked_posts;
+
+            // 서버에서 피드 게시물 가져오기
+            return fetch('/api/feed-posts')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // 서버에서 받은 데이터로 포스트 매핑
+                    const posts = data.posts.map(post => ({
+                        id: post.id,
+                        imageUrl: post.imageUrl || 'default_post.png',
+                        content: post.content,
+                        userImage: post.userImage || 'people.png',
+                        nickname: post.nickname,
+                        date: post.date,
+                        likes: post.likes || 0,
+                        isLiked: likedPostIds.includes(post.id),
+                        isStaticImage: post.imageUrl ? false : true
+                    }));
+
+                    // 기존 createPostCard 함수 사용하여 포스트 카드 생성
+                    posts.forEach(post => {
+                        const postCard = createPostCard(post);
+                        feed.appendChild(postCard);
+                    });
+                });
+        })
+        .catch(error => {
+            console.error('피드 게시물을 불러오는 중 오류 발생:', error);
+            const feed = document.querySelector('.feed');
+            feed.innerHTML = `<p>게시물을 불러올 수 없습니다: ${error.message}</p>`;
+        });
+});
+
 // 페이지 로드 시 포스트 생성 및 arrow 버튼 이벤트 추가
 document.addEventListener('DOMContentLoaded', function() {
     const feed = document.querySelector('.feed');

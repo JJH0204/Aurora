@@ -28,5 +28,6 @@ urlpatterns = [
     path('api/feed-posts', views.get_feed_posts, name='get_feed_posts'),
     path('api/toggle-like', views.toggle_like, name='toggle_like'),
     path('api/check-liked-posts', views.check_liked_posts, name='check_liked_posts'),
+    path('api/get-profile-info/', views.get_profile_info, name='get_profile_info'),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT) \
   + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
