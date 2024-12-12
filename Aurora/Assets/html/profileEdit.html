@@ -43,11 +43,11 @@
                 <div class="profile-info-section">
                     <div class="form-group">
                         <label for="username">Username</label>
-                        <input type="text" id="username" class="form-control" value="{{ user.username }}">
+                        <input type="text" id="username" class="form-control" value="{{ user_info.username }}">
                     </div>
                     <div class="form-group">
                         <label for="email">Email</label>
-                        <input type="email" id="email" class="form-control" value="{{ user.email }}" readonly>
+                        <input type="email" id="email" class="form-control" value="{{ user_info.email }}" readonly>
                     </div>
                     <div class="form-group">
                         <label for="bio">Bio</label>
@@ -78,34 +78,41 @@
             }
         }
 
-        function saveProfile() {
-            const formData = new FormData();
-            formData.append('username', document.getElementById('username').value);
-            formData.append('bio', document.getElementById('bio').value);
-            
-            const profileImage = document.getElementById('profile-image').files[0];
-            if (profileImage) {
-                formData.append('profile_image', profileImage);
-            }
+        document.addEventListener('DOMContentLoaded', function() {
+            const saveButton = document.querySelector('.btn-primary');
+            if (saveButton) {
+                saveButton.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    
+                    const formData = {
+                        username: document.getElementById('username').value.trim(),
+                        email: document.getElementById('email').value.trim(),
+                        bio: document.getElementById('bio').value.trim()
+                    };
 
-            fetch('/api/update-profile', {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.message === '프로필 업데이트 성공') {
-                    alert('프로필이 성공적으로 업데이트되었습니다.');
-                    window.location.href = '/profile/';
-                } else {
-                    alert(data.message);
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('프로필 업데이트 중 오류가 발생했습니다.');
-            });
-        }
+                    fetch('/api/update-profile/', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(formData)
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            alert('프로필이 성공적으로 업데이트되었습니다.');
+                            window.location.href = '/profile/';
+                        } else {
+                            alert(data.message || '프로필 업데이트에 실패했습니다.');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('프로필 업데이트 중 오류가 발생했습니다.');
+                    });
+                });
+            }
+        });
 
         function confirmLogout() {
             if (confirm('로그아웃 하시겠습니까?')) {

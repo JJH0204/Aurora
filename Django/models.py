@@ -62,3 +62,12 @@ class MediaFile(models.Model):
 
     class Meta:
         db_table = 'MEDIA_FILE'
+
+class FeedLike(models.Model):
+    user = models.ForeignKey(UserInfo, on_delete=models.CASCADE)
+    feed = models.ForeignKey(FeedInfo, on_delete=models.CASCADE)
+    like_date = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'FEED_LIKE'
+        unique_together = ('user', 'feed')
