@@ -16,6 +16,7 @@ const posts = [
         content: '첫 번째 샘플 포스트입니다. 여기에 내용이 들어갑니다',
         userImage: 'people.png',
         nickname: 'User1',
+        userId: 1,
         date: '2024-03-20',
         isLiked: false,
         isStaticImage: true  // 정적 이미지 여부
@@ -27,6 +28,7 @@ const posts = [
         content: '두 번째 샘플 포스트입니다. 여기에 내용이 들어갑니다',
         userImage: 'people.png',
         nickname: 'User2',
+        userId: 2,
         date: '2024-03-20',
         isLiked: false,
         isStaticImage: true
@@ -38,6 +40,7 @@ const posts = [
         content: '세 번째 샘플 포스트입니다. 여기에 내용이 들어갑니다',
         userImage: 'people.png',
         nickname: 'User3',
+        userId: 3,
         date: '2024-03-20',
         isLiked: false,
         isStaticImage: true
@@ -57,9 +60,11 @@ function createPostCard(post) {
             ${post.content}
         </div>
         <div class="post-footer">
-            <div class="user-info">
+            <div class="post-user" onclick="window.location.href='/profile/${post.userId}/'">
                 <img src="${getImageUrl(post.userImage, true)}" alt="User" class="user-image">
                 <span class="nickname">${post.nickname}</span>
+            </div>
+            <div class="user-info">
                 <img src="${getImageUrl(`like_${post.isLiked ? 'on' : 'off'}.png`, true)}" 
                      alt="Like" 
                      class="like-icon"

@@ -1,0 +1,188 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Profile - Aurora</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <div class="search-container">
+            <input type="text" class="form-control search" placeholder="Aurora">
+            <img src="{% static 'img/search.png' %}" alt="Search">
+        </div>
+        {% if user.is_authenticated %}
+            <button class="login-btn" onclick="confirmLogout()">Logout</button>
+        {% else %}
+            <button class="login-btn" onclick="window.location.href='/login/'">Login</button>
+        {% endif %}
+    </div>
+
+    <!-- Side Menu -->
+    <div class="side-menu">
+        <button onclick="window.location.href='/'"><img src="{% static 'img/aurora_logo.png' %}" alt="Aurora Logo"></button>
+        <button onclick="window.location.href='/post/'"><img src="{% static 'img/post.png' %}" alt="Post"></button>
+        <button onclick="window.location.href='/profile/'"><img src="{% static 'img/people.png' %}" alt="Profile"></button>
+        <button onclick="window.location.href='/save/'"><img src="{% static 'img/save.png' %}" alt="Save"></button>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="profile-edit-container">
+            <h2>Edit Profile</h2>
+            <div class="profile-form">
+                <div class="profile-image-section">
+                    <img id="profile-preview" src="{% static 'img/default-profile.png' %}" alt="Profile Image">
+                    <input type="file" id="profile-image" accept="image/*" onchange="previewImage(this)">
+                    <label for="profile-image" class="btn btn-secondary">Change Profile Image</label>
+                </div>
+                <div class="profile-info-section">
+                    <div class="form-group">
+                        <label for="username">Username</label>
+                        <input type="text" id="username" class="form-control" value="{{ user.username }}">
+                    </div>
+                    <div class="form-group">
+                        <label for="email">Email</label>
+                        <input type="email" id="email" class="form-control" value="{{ user.email }}" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label for="bio">Bio</label>
+                        <textarea id="bio" class="form-control" rows="3">{{ user_info.bio }}</textarea>
+                    </div>
+                    <div class="form-group">
+                        <button onclick="saveProfile()" class="btn btn-primary">Save Changes</button>
+                        <button onclick="window.location.href='/profile/'" class="btn btn-secondary">Cancel</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function toggleMenu() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('active');
+        }
+
+        function previewImage(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('profile-preview').src = e.target.result;
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function saveProfile() {
+            const formData = new FormData();
+            formData.append('username', document.getElementById('username').value);
+            formData.append('bio', document.getElementById('bio').value);
+            
+            const profileImage = document.getElementById('profile-image').files[0];
+            if (profileImage) {
+                formData.append('profile_image', profileImage);
+            }
+
+            fetch('/api/update-profile', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.message === '프로필 업데이트 성공') {
+                    alert('프로필이 성공적으로 업데이트되었습니다.');
+                    window.location.href = '/profile/';
+                } else {
+                    alert(data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('프로필 업데이트 중 오류가 발생했습니다.');
+            });
+        }
+
+        function confirmLogout() {
+            if (confirm('로그아웃 하시겠습니까?')) {
+                fetch('/api/logout', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.message === '로그아웃 성공') {
+                        window.location.href = '/login/';
+                    } else {
+                        alert(data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('로그아웃 처리 중 오류가 발생했습니다.');
+                });
+            }
+        }
+    </script>
+
+    <style>
+        .profile-edit-container {
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 2rem;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+
+        .profile-form {
+            display: flex;
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .profile-image-section {
+            flex: 1;
+            text-align: center;
+        }
+
+        .profile-image-section img {
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-bottom: 1rem;
+        }
+
+        .profile-image-section input[type="file"] {
+            display: none;
+        }
+
+        .profile-info-section {
+            flex: 2;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+
+        .btn {
+            margin-right: 1rem;
+        }
+    </style>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

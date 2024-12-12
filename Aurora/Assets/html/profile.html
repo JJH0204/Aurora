@@ -207,7 +207,11 @@
             <input type="text" class="form-control search" placeholder="Aurora">
             <img src="{% static 'img/search.png' %}" alt="Search">
         </div>
-        <button class="login-btn" onclick="window.location.href='/login/'">login</button>
+        {% if user.is_authenticated %}
+            <button class="login-btn" onclick="confirmLogout()">Logout</button>
+        {% else %}
+            <button class="login-btn" onclick="window.location.href='/login/'">Login</button>
+        {% endif %}
     </div>
 
     <!-- Side Menu -->
@@ -237,7 +241,7 @@
                         </div>
                         <p class="profile-bio" id="user-bio">사용자 소개가 표시됩니다.</p>
                         <div class="profile-actions">
-                            <button class="edit-profile-btn" onclick="editProfile()">프로필 편집</button>
+                            <button class="edit-profile-btn" onclick="editProfile()">Edit</button>
                         </div>
                     </div>
                 </div>
@@ -365,8 +369,30 @@
         }
 
         function editProfile() {
-            // 프로필 편집 기능은 추후 구현
-            alert('프로필 편집 기능은 준비 중입니다.');
+            window.location.href = '/profile/edit/';
+        }
+
+        function confirmLogout() {
+            if (confirm('로그아웃 하시겠습니까?')) {
+                fetch('/api/logout', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.message === '로그아웃 성공') {
+                        window.location.href = '/login/';
+                    } else {
+                        alert(data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('로그아웃 처리 중 오류가 발생했습니다.');
+                });
+            }
         }
     </script>
 

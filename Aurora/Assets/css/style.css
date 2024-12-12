@@ -238,6 +238,13 @@ body {
     margin-top: auto;
 }
 
+.post-user {
+    display: flex;
+    align-items: center;
+    margin-right: 0;
+    cursor: pointer;
+}
+
 .user-info {
     display: flex;
     align-items: center;
