@@ -49,7 +49,8 @@ RUN pip3 install --no-cache-dir bcrypt
 
 # MariaDB 초기화 스크립트 복사
 COPY Maria/deploy_db.sql /docker-entrypoint-initdb.d/
-RUN chmod 755 /docker-entrypoint-initdb.d/deploy_db.sql
+RUN chmod 644 /docker-entrypoint-initdb.d/deploy_db.sql && \
+    dos2unix /docker-entrypoint-initdb.d/deploy_db.sql
 
 # MariaDB 문자셋 설정
 COPY Maria/my.cnf /etc/mysql/conf.d/
@@ -62,6 +63,15 @@ COPY . .
 COPY docker-entrypoint.sh /app/docker-entrypoint.sh
 RUN dos2unix /app/docker-entrypoint.sh && \
     chmod +x /app/docker-entrypoint.sh
+
+# 모든 스크립트 파일의 줄바꿈 문자 변환
+RUN find /app -type f -name "*.sh" -exec dos2unix {} \;
+RUN find /app -type f -name "*.py" -exec dos2unix {} \;
+RUN find /app -type f -name "*.sql" -exec dos2unix {} \;
+
+# 디렉토리 권한 설정
+RUN chown -R mysql:mysql /var/lib/mysql /var/run/mysqld && \
+    chmod -R 755 /app/Aurora/Assets /app/staticfiles /app/Aurora/Data/media
 
 # MariaDB 환경 변수 설정
 ENV MYSQL_DATABASE=aurora_db \
