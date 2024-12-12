@@ -31,6 +31,7 @@ function createPostCard(post) {
                      class="like-icon"
                      data-post-id="${post.id}"
                      style="width: 24px; height: 24px; margin-left: 10px; cursor: pointer;">
+                <span class="like-count">${post.likes || 0}</span>
             </div>
             <div class="date">${post.date}</div>
         </div>
@@ -38,25 +39,89 @@ function createPostCard(post) {
 
     // 좋아요 버튼 이벤트 리스너
     const likeIcon = postCard.querySelector('.like-icon');
+    const likeCount = postCard.querySelector('.like-count');
     likeIcon.addEventListener('click', function() {
         const postId = this.dataset.postId;
-        const post = posts.find(p => p.id == postId);
-        post.isLiked = !post.isLiked;
-        this.src = getImageUrl(`like_${post.isLiked ? 'on' : 'off'}.png`, true);
         
-        // 애니메이션 적용
-        this.classList.remove('animate'); // 기존 애니메이션 제거
-        void this.offsetWidth; // 리플로우 강제 실행
-        this.classList.add('animate'); // 새 애니메이션 추가
-        
-        // 애니메이션 종료 후 클래스 제거
-        setTimeout(() => {
-            this.classList.remove('animate');
-        }, 500); // 애니메이션 지속 시간과 동일하게 설정
+        fetch('/api/toggle-like', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ feed_id: postId })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.is_liked !== undefined) {
+                // 좋아요 아이콘 변경
+                this.src = getImageUrl(`like_${data.is_liked ? 'on' : 'off'}.png`, true);
+                
+                // 좋아요 카운트 업데이트
+                const currentLikes = parseInt(likeCount.textContent);
+                likeCount.textContent = data.is_liked ? currentLikes + 1 : currentLikes - 1;
+                
+                // 애니메이션 적용
+                this.classList.remove('animate');
+                void this.offsetWidth;
+                this.classList.add('animate');
+                
+                setTimeout(() => {
+                    this.classList.remove('animate');
+                }, 500);
+            }
+        })
+        .catch(error => {
+            console.error('좋아요 토글 중 오류:', error);
+        });
     });
 
     return postCard;
 }
+
+document.addEventListener('DOMContentLoaded', function() {
+    const feed = document.querySelector('.feed');
+    
+    // 좋아요한 게시물 ID 목록 가져오기
+    fetch('/api/check-liked-posts')
+        .then(response => response.json())
+        .then(likedData => {
+            const likedPostIds = likedData.liked_posts;
+
+            // 서버에서 피드 게시물 가져오기
+            return fetch('/api/feed-posts')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // 서버에서 받은 데이터로 포스트 매핑
+                    const posts = data.posts.map(post => ({
+                        id: post.id,
+                        imageUrl: post.imageUrl || 'default_post.png',
+                        content: post.content,
+                        userImage: post.userImage || 'people.png',
+                        nickname: post.nickname,
+                        date: post.date,
+                        likes: post.likes || 0,
+                        isLiked: likedPostIds.includes(post.id),
+                        isStaticImage: post.imageUrl ? false : true
+                    }));
+
+                    // 기존 createPostCard 함수 사용하여 포스트 카드 생성
+                    posts.forEach(post => {
+                        const postCard = createPostCard(post);
+                        feed.appendChild(postCard);
+                    });
+                });
+        })
+        .catch(error => {
+            console.error('피드 게시물을 불러오는 중 오류 발생:', error);
+            const feed = document.querySelector('.feed');
+            feed.innerHTML = `<p>게시물을 불러올 수 없습니다: ${error.message}</p>`;
+        });
+});
 
 // 페이지 로드 시 포스트 생성 및 arrow 버튼 이벤트 추가
 document.addEventListener('DOMContentLoaded', function() {
@@ -78,6 +143,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 userImage: post.userImage || 'people.png',
                 nickname: post.nickname,
                 date: post.date,
+                likes: post.likes || 0,
                 isLiked: false,
                 isStaticImage: post.imageUrl ? false : true
             }));
@@ -139,30 +205,36 @@ document.addEventListener('DOMContentLoaded', function() {
                 bio: document.querySelector('#bio').value.trim()
             };
 
-            // 입력값 검증
-            if (!formData.username || !formData.email) {
-                alert('사용자 이름과 이메일은 필수 입력 항목입니다.');
-                return;
-            }
+            console.log('Sending data:', formData); // 디버깅용
 
-            // 이메일 형식 검증
-            if (!isValidEmail(formData.email)) {
-                alert('올바른 이메일 형식을 입력해주세요.');
-                return;
-            }
+            // CSRF 토큰 가져오기
+            const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
 
             fetch('/api/update-profile/', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrftoken,
+                    'Accept': 'application/json',
+                    // CORS 헤더 추가
+                    'Access-Control-Allow-Origin': '*',
+                    'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
+                    'Access-Control-Allow-Headers': 'Content-Type'
                 },
+                credentials: 'same-origin',  // 쿠키 포함
                 body: JSON.stringify(formData)
             })
-            .then(response => response.json())
+            .then(response => {
+                console.log('Response status:', response.status); // 디버깅용
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
             .then(data => {
+                console.log('Response data:', data); // 디버깅용
                 if (data.status === 'success') {
                     alert('프로필이 성공적으로 업데이트되었습니다.');
-                    // 프로필 페이지로 리다이렉트
                     window.location.href = '/profile/';
                 } else {
                     alert(data.message || '프로필 업데이트에 실패했습니다.');
@@ -172,21 +244,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.error('Error:', error);
                 alert('프로필 업데이트 중 오류가 발생했습니다.');
             });
-        });
-    }
-
-    // 이메일 유효성 검사 함수
-    function isValidEmail(email) {
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        return emailRegex.test(email);
-    }
-
-    // Cancel 버튼 처리
-    const cancelButton = document.querySelector('button.btn-secondary');
-    if (cancelButton) {
-        cancelButton.addEventListener('click', function(e) {
-            e.preventDefault();
-            window.location.href = '/profile/';
         });
     }
 });

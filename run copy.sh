@@ -6,5 +6,4 @@ docker rm aurora 2>/dev/null
 
 docker image rm krjaeh0/aurora:latest
 
-# Run the container
 docker run -d --name aurora -p 80:80 -v "$(pwd)/Aurora:/app/Aurora" krjaeh0/aurora:latest

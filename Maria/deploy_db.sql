@@ -55,4 +55,13 @@ CREATE TABLE MEDIA_FILE (
     FOREIGN KEY (feed_id) REFERENCES FEED_INFO(`feed_id`)
 );
 
+CREATE TABLE FEED_LIKE (
+    `user_id` INT UNSIGNED,
+    `feed_id` INT UNSIGNED,
+    `like_date` DATETIME,
+    PRIMARY KEY (user_id, feed_id),
+    FOREIGN KEY (user_id) REFERENCES USER_INFO(`user_id`),
+    FOREIGN KEY (feed_id) REFERENCES FEED_INFO(`feed_id`)
+);
+
 FLUSH PRIVILEGES;

@@ -29,7 +29,7 @@ def signup(request):
 
         # 이메일 중복 검사
         if User.objects.filter(email=email).exists():
-            return JsonResponse({'message': '이미 사용 중인 이메일입니다.'}, status=400)
+            return JsonResponse({'message': '이��일 사용 중인 이메일입니다.'}, status=400)
 
         # Django User 모델을 사용하여 사용자 생성
         user = User.objects.create_user(
@@ -61,7 +61,7 @@ def signup(request):
 @csrf_exempt
 def login(request):
     if request.method != 'POST':
-        return JsonResponse({'message': '잘못된 요청 방식입니다.'}, status=405)
+        return JsonResponse({'message': '잘��된 요청 방식입니다.'}, status=405)
 
     try:
         data = json.loads(request.body)
@@ -157,19 +157,26 @@ def create_post(request):
 @login_required
 def get_profile(request, user_id=None):
     try:
-        # If user_id is provided, get that user's profile, otherwise get the current user's profile
-        target_user = User.objects.get(id=user_id) if user_id else request.user
-        
-        profile_data = {
-            'username': target_user.username,
-            'email': target_user.email,
-            'bio': target_user.profile.bio if hasattr(target_user, 'profile') else '',
-            'profile_image': target_user.profile.profile_image.url if hasattr(target_user, 'profile') and target_user.profile.profile_image else None,
-            'is_own_profile': request.user.id == target_user.id
-        }
-        return JsonResponse(profile_data)
-    except User.DoesNotExist:
-        return JsonResponse({'error': 'User not found'}, status=404)
+        with connection.cursor() as cursor:
+            cursor.execute("""
+                SELECT ui.username, ua.email, ui.profile_image
+                FROM USER_INFO ui
+                JOIN USER_ACCESS ua ON ui.user_id = ua.user_id
+                WHERE ui.user_id = %s
+            """, [user_id if user_id else request.user.id])
+            
+            user_data = cursor.fetchone()
+            if not user_data:
+                return JsonResponse({'error': '사용자를 찾을 수 없습니다.'}, status=404)
+            
+            return JsonResponse({
+                'username': user_data[0],
+                'email': user_data[1],
+                'profile_image': user_data[2] if user_data[2] else None
+            })
+    except Exception as e:
+        print(f"Error getting profile: {str(e)}")
+        return JsonResponse({'error': '프로필을 불러오는 중 오류가 발생했습니다.'}, status=500)
 
 @csrf_exempt
 @login_required
@@ -275,116 +282,195 @@ def get_liked_posts(request):
         return JsonResponse({'message': '좋아요한 게시물을 불러오는 중 오류가 발생했습니다.'}, status=500)
 
 @csrf_exempt
-def update_profile(request):
-    print("Method:", request.method)  # 요청 메소드 확인
-    
-    if request.method != 'POST':
-        return JsonResponse({'message': '잘못된 요청 방식입니다.'}, status=405)
-
+def get_profile_info(request):
     try:
-        # 요청 데이터 확인
-        print("Request body:", request.body.decode('utf-8'))
-        data = json.loads(request.body.decode('utf-8'))
-        
-        username = data.get('username')
-        email = data.get('email')
-        bio = data.get('bio', '')
-        
-        print(f"Received data - username: {username}, email: {email}, bio: {bio}")
-
         with connection.cursor() as cursor:
+            cursor.execute("""
+                SELECT ui.username, ua.email, ui.bio
+                FROM USER_INFO ui
+                JOIN USER_ACCESS ua ON ui.user_id = ua.user_id
+                WHERE ui.user_id = %s
+            """, [1])  # 현재는 임시로 user_id = 1 사용
+            
+            user_info = cursor.fetchone()
+            if user_info:
+                return JsonResponse({
+                    'status': 'success',
+                    'data': {
+                        'username': user_info[0],
+                        'email': user_info[1],
+                        'bio': user_info[2] or ''
+                    }
+                })
+            return JsonResponse({
+                'status': 'error',
+                'message': '사용자 정보를 찾을 수 없습니다.'
+            }, status=404)
+    except Exception as e:
+        print(f"Error getting profile info: {str(e)}")
+        return JsonResponse({
+            'status': 'error',
+            'message': '프로필 정보를 가져오는 중 오류가 발생했습니다.'
+        }, status=500)
+
+@csrf_exempt
+def update_profile(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            new_username = data.get('username')
+            new_email = data.get('email')
+            new_bio = data.get('bio', '')
+
+            # Django 모델을 사용하도록 수정
             try:
-                # 현재 사용자 정보 확인
-                cursor.execute("SELECT * FROM USER_INFO WHERE user_id = 1")
-                user_info = cursor.fetchone()
-                print("Current user info:", user_info)
+                user_info = UserInfo.objects.get(user_id=1)  # 현재 로그인된 사용자 ID로 수정 필요
+                user_info.username = new_username
+                user_info.save()
 
-                # USER_INFO 업데이트
-                cursor.execute("""
-                    UPDATE USER_INFO 
-                    SET username = %s 
-                    WHERE user_id = 1
-                """, [username])
-                print("USER_INFO updated")
-
-                # USER_ACCESS 업데이트
-                cursor.execute("""
-                    UPDATE USER_ACCESS 
-                    SET email = %s 
-                    WHERE user_id = 1
-                """, [email])
-                print("USER_ACCESS updated")
+                user_access = UserAccess.objects.get(user_id=1)
+                user_access.email = new_email
+                user_access.save()
 
                 return JsonResponse({
                     'status': 'success',
-                    'message': '프로필이 성공적으로 업데이트되었습니다.',
-                    'data': {
-                        'username': username,
-                        'email': email,
-                        'bio': bio
-                    }
+                    'message': '프로필이 성공적으로 업데이트되었습니다.'
                 })
-
-            except Exception as db_error:
-                print("Database error:", str(db_error))
-                print("Traceback:", traceback.format_exc())
+            except UserInfo.DoesNotExist:
                 return JsonResponse({
                     'status': 'error',
-                    'message': f'데이터베이스 오류: {str(db_error)}'
-                }, status=500)
+                    'message': '사용자를 찾을 수 없습니다.'
+                }, status=404)
 
-    except json.JSONDecodeError as e:
-        print("JSON decode error:", str(e))
-        return JsonResponse({
-            'status': 'error',
-            'message': '잘못된 JSON 형식입니다.'
-        }, status=400)
-    
-    except Exception as e:
-        print("Unexpected error:", str(e))
-        print("Traceback:", traceback.format_exc())
-        return JsonResponse({
-            'status': 'error',
-            'message': f'서버 오류: {str(e)}'
-        }, status=500)
+        except Exception as e:
+            print("Error during profile update:", str(e))
+            return JsonResponse({
+                'status': 'error',
+                'message': '프로필 업데이트 중 오류가 발생했습니다.'
+            }, status=500)
+
+    return JsonResponse({'message': '잘못된 요청 방식입니다.'}, status=405)
 
 @csrf_exempt
 def get_feed_posts(request):
     try:
         with connection.cursor() as cursor:
-            # 모든 게시물 쿼리
             cursor.execute("""
                 SELECT 
                     f.feed_id, 
                     fd.`desc`, 
-                    u.username, 
+                    ui.username,  # username을 user_id 대신 사용
                     mf.file_name,
                     f.like_count,
-                    f.feed_type
+                    f.feed_type,
+                    ui.user_id
                 FROM FEED_INFO f
                 LEFT JOIN FEED_DESC fd ON f.feed_id = fd.feed_id
-                LEFT JOIN USER_INFO u ON f.user_id = u.user_id
+                LEFT JOIN USER_INFO ui ON f.user_id = ui.user_id
                 LEFT JOIN MEDIA_FILE mf ON f.feed_id = mf.feed_id
                 GROUP BY f.feed_id
                 ORDER BY f.feed_id DESC
             """)
             
             feeds = cursor.fetchall()
-
-            posts = [{
-                'id': feed[0],
-                'content': feed[1] or '',
-                'nickname': feed[2] or 'Unknown',
-                'imageUrl': feed[3] or 'default_post.png',
-                'likes': feed[4] or 0,
-                'date': datetime.now().strftime('%Y-%m-%d')  # 현재 날짜 사용
-            } for feed in feeds]
-
-        return JsonResponse({'posts': posts})
+            
+            return JsonResponse({
+                'posts': [{
+                    'id': feed[0],
+                    'content': feed[1] or '',
+                    'nickname': feed[2] or 'Unknown',  # username 표시
+                    'imageUrl': feed[3] or 'default_post.png',
+                    'likes': feed[4] or 0,
+                    'userId': feed[6]  # 프로필 링크용 user_id
+                } for feed in feeds]
+            })
 
     except Exception as e:
         print(f"Error fetching feed posts: {str(e)}")
+        return JsonResponse({'message': '피드를 불러오는 중 오류가 발생했습니다.'}, status=500)
+
+@csrf_exempt
+@login_required
+def toggle_like(request):
+    if request.method != 'POST':
+        return JsonResponse({'message': '잘못된 요청 방식입니다.'}, status=405)
+
+    try:
+        data = json.loads(request.body)
+        feed_id = data.get('feed_id')
+        user_id = request.user.id
+
+        with transaction.atomic():
+            # 이미 좋아요를 눌렀는지 확인
+            with connection.cursor() as cursor:
+                cursor.execute("""
+                    SELECT COUNT(*) FROM FEED_LIKE 
+                    WHERE user_id = %s AND feed_id = %s
+                """, [user_id, feed_id])
+                is_already_liked = cursor.fetchone()[0] > 0
+
+            if is_already_liked:
+                # 좋아요 취소
+                with connection.cursor() as cursor:
+                    cursor.execute("""
+                        DELETE FROM FEED_LIKE 
+                        WHERE user_id = %s AND feed_id = %s
+                    """, [user_id, feed_id])
+                    
+                    # FEED_INFO의 like_count 감소
+                    cursor.execute("""
+                        UPDATE FEED_INFO 
+                        SET like_count = like_count - 1 
+                        WHERE feed_id = %s
+                    """, [feed_id])
+                
+                return JsonResponse({
+                    'message': '좋아요 취소됨', 
+                    'is_liked': False
+                })
+            else:
+                # 좋아요 추가
+                with connection.cursor() as cursor:
+                    cursor.execute("""
+                        INSERT INTO FEED_LIKE (user_id, feed_id, like_date) 
+                        VALUES (%s, %s, NOW())
+                    """, [user_id, feed_id])
+                    
+                    # FEED_INFO의 like_count 증가
+                    cursor.execute("""
+                        UPDATE FEED_INFO 
+                        SET like_count = like_count + 1 
+                        WHERE feed_id = %s
+                    """, [feed_id])
+                
+                return JsonResponse({
+                    'message': '좋아요 완료', 
+                    'is_liked': True
+                })
+
+    except Exception as e:
+        print(f"Error during like toggle: {str(e)}")
+        return JsonResponse({'message': '좋아요 처리 중 오류가 발생했습니다.'}, status=500)
+
+@csrf_exempt
+@login_required
+def check_liked_posts(request):
+    try:
+        user_id = request.user.id
+        
+        with connection.cursor() as cursor:
+            # 사용자가 좋아요한 게시물 ID 목록 조회
+            cursor.execute("""
+                SELECT feed_id FROM FEED_LIKE 
+                WHERE user_id = %s
+            """, [user_id])
+            
+            liked_feed_ids = [row[0] for row in cursor.fetchall()]
+            
         return JsonResponse({
-            'message': f'피드 게시물을 불러오는 중 오류가 발생했습니다: {str(e)}',
-            'error': str(e)
-        }, status=500)
+            'liked_posts': liked_feed_ids
+        })
+
+    except Exception as e:
+        print(f"Error checking liked posts: {str(e)}")
+        return JsonResponse({'message': '좋아요한 게시물 확인 중 오류가 발생했습니다.'}, status=500)
