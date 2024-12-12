@@ -8,6 +8,10 @@ import json
 import bcrypt
 import os
 from django.conf import settings
+import traceback  # 상세한 오류 추적을 위해 추가
+from django.views.decorators.http import require_http_methods
+from datetime import datetime
+
 
 @csrf_exempt
 def signup(request):
@@ -264,50 +268,86 @@ def get_liked_posts(request):
         return JsonResponse({'message': '좋아요한 게시물을 불러오는 중 오류가 발생했습니다.'}, status=500)
 
 @csrf_exempt
-@login_required
+@require_http_methods(["POST"])
 def update_profile(request):
-    if request.method != 'POST':
-        return JsonResponse({'message': '잘못된 요청 방식입니다.'}, status=405)
-
     try:
-        user = request.user
-        username = request.POST.get('username')
-        bio = request.POST.get('bio')
+        print("Request method:", request.method)
+        print("Request body:", request.body)
+        
+        data = json.loads(request.body)
+        username = data.get('username')
+        email = data.get('email')
+        bio = data.get('bio', '')
 
-        if not username:
-            return JsonResponse({'message': '사용자 이름은 필수입니다.'}, status=400)
-
-        # 사용자 이름 중복 체크
-        if User.objects.filter(username=username).exclude(id=user.id).exists():
-            return JsonResponse({'message': '이미 사용 중인 사용자 이름입니다.'}, status=400)
-
-        # 프로필 이미지 처리
-        if 'profile_image' in request.FILES:
-            profile_image = request.FILES['profile_image']
-            # 이미지 저장 경로 설정
-            upload_path = os.path.join('media', 'profile_images', f'user_{user.id}')
-            os.makedirs(upload_path, exist_ok=True)
-            
-            # 이미지 저장
-            image_path = os.path.join(upload_path, profile_image.name)
-            with open(image_path, 'wb+') as destination:
-                for chunk in profile_image.chunks():
-                    destination.write(chunk)
-
-        # 사용자 정보 업데이트
-        user.username = username
-        user.save()
-
-        # USER_INFO 테이블 업데이트
         with connection.cursor() as cursor:
+            # USER_INFO 업데이트
             cursor.execute("""
                 UPDATE USER_INFO 
-                SET username = %s, bio = %s
-                WHERE user_id = %s
-            """, [username, bio, user.id])
+                SET username = %s 
+                WHERE user_id = 1
+            """, [username])
 
-        return JsonResponse({'message': '프로필 업데이트 성공'})
+            # USER_ACCESS 업데이트
+            cursor.execute("""
+                UPDATE USER_ACCESS 
+                SET email = %s 
+                WHERE user_id = 1
+            """, [email])
+
+        return JsonResponse({
+            'status': 'success',
+            'message': '프로필이 업데이트되었습니다.',
+            'data': {
+                'username': username,
+                'email': email,
+                'bio': bio
+            }
+        })
 
     except Exception as e:
-        print(f"Error updating profile: {str(e)}")
-        return JsonResponse({'message': '프로필 업데이트 중 오류가 발생했습니다.'}, status=500)
+        print("Error:", str(e))
+        return JsonResponse({
+            'status': 'error',
+            'message': str(e)
+        }, status=500)
+
+@csrf_exempt
+def get_feed_posts(request):
+    try:
+        with connection.cursor() as cursor:
+            # 모든 게시물 쿼리
+            cursor.execute("""
+                SELECT 
+                    f.feed_id, 
+                    fd.`desc`, 
+                    u.username, 
+                    mf.file_name,
+                    f.like_count,
+                    f.feed_type
+                FROM FEED_INFO f
+                LEFT JOIN FEED_DESC fd ON f.feed_id = fd.feed_id
+                LEFT JOIN USER_INFO u ON f.user_id = u.user_id
+                LEFT JOIN MEDIA_FILE mf ON f.feed_id = mf.feed_id
+                GROUP BY f.feed_id
+                ORDER BY f.feed_id DESC
+            """)
+            
+            feeds = cursor.fetchall()
+
+            posts = [{
+                'id': feed[0],
+                'content': feed[1] or '',
+                'nickname': feed[2] or 'Unknown',
+                'imageUrl': feed[3] or 'default_post.png',
+                'likes': feed[4] or 0,
+                'date': datetime.now().strftime('%Y-%m-%d')  # 현재 날짜 사용
+            } for feed in feeds]
+
+        return JsonResponse({'posts': posts})
+
+    except Exception as e:
+        print(f"Error fetching feed posts: {str(e)}")
+        return JsonResponse({
+            'message': f'피드 게시물을 불러오는 중 오류가 발생했습니다: {str(e)}',
+            'error': str(e)
+        }, status=500)

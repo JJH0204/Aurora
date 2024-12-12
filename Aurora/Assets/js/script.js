@@ -8,45 +8,6 @@ function getImageUrl(imagePath, isStatic = false) {
     return `/media/${imagePath}`;
 }
 
-// 포스트 데이터 예시
-const posts = [
-    {
-        id: 1,
-        imageUrl: 'aurora_logo.png',
-        content: '첫 번째 샘플 포스트입니다. 여기에 내용이 들어갑니다',
-        userImage: 'people.png',
-        nickname: 'User1',
-        userId: 1,
-        date: '2024-03-20',
-        isLiked: false,
-        isStaticImage: true  // 정적 이미지 여부
-    },
-    
-    {
-        id: 2,
-        imageUrl: 'aurora_logo2.png',
-        content: '두 번째 샘플 포스트입니다. 여기에 내용이 들어갑니다',
-        userImage: 'people.png',
-        nickname: 'User2',
-        userId: 2,
-        date: '2024-03-20',
-        isLiked: false,
-        isStaticImage: true
-    },
-
-    {
-        id: 3,
-        imageUrl: 'aurora_logo.png',
-        content: '세 번째 샘플 포스트입니다. 여기에 내용이 들어갑니다',
-        userImage: 'people.png',
-        nickname: 'User3',
-        userId: 3,
-        date: '2024-03-20',
-        isLiked: false,
-        isStaticImage: true
-    }
-];
-
 // 포스트 카드 생성 함수
 function createPostCard(post) {
     const postCard = document.createElement('div');
@@ -100,9 +61,38 @@ function createPostCard(post) {
 // 페이지 로드 시 포스트 생성 및 arrow 버튼 이벤트 추가
 document.addEventListener('DOMContentLoaded', function() {
     const feed = document.querySelector('.feed');
-    posts.forEach(post => {
-        feed.appendChild(createPostCard(post));
-    });
+    // 서버에서 피드 게시물 가져오기
+    fetch('/api/feed-posts')
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            // 서버에서 받은 데이터로 포스트 매핑
+            const posts = data.posts.map(post => ({
+                id: post.id,
+                imageUrl: post.imageUrl || 'default_post.png',
+                content: post.content,
+                userImage: post.userImage || 'people.png',
+                nickname: post.nickname,
+                date: post.date,
+                isLiked: false,
+                isStaticImage: post.imageUrl ? false : true
+            }));
+
+            // 기존 createPostCard 함수 사용하여 포스트 카드 생성
+            posts.forEach(post => {
+                const postCard = createPostCard(post);
+                feed.appendChild(postCard);
+            });
+        })
+        .catch(error => {
+            console.error('피드 게시물을 불러오는 중 오류 발생:', error);
+            const feed = document.querySelector('.feed');
+            feed.innerHTML = `<p>게시물을 불러올 수 없습니다: ${error.message}</p>`;
+        });
 
     // Arrow 버튼 클릭 이벤트 추가
     const arrowButton = document.querySelector('.arrow-down');
@@ -134,4 +124,69 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     });
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+    const saveButton = document.querySelector('#saveChanges');
+    if (saveButton) {
+        saveButton.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            // 입력값 가져오기
+            const formData = {
+                username: document.querySelector('#username').value.trim(),
+                email: document.querySelector('#email').value.trim(),
+                bio: document.querySelector('#bio').value.trim()
+            };
+
+            // 입력값 검증
+            if (!formData.username || !formData.email) {
+                alert('사용자 이름과 이메일은 필수 입력 항목입니다.');
+                return;
+            }
+
+            // 이메일 형식 검증
+            if (!isValidEmail(formData.email)) {
+                alert('올바른 이메일 형식을 입력해주세요.');
+                return;
+            }
+
+            fetch('/api/update-profile/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(formData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    alert('프로필이 성공적으로 업데이트되었습니다.');
+                    // 프로필 페이지로 리다이렉트
+                    window.location.href = '/profile/';
+                } else {
+                    alert(data.message || '프로필 업데이트에 실패했습니다.');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('프로필 업데이트 중 오류가 발생했습니다.');
+            });
+        });
+    }
+
+    // 이메일 유효성 검사 함수
+    function isValidEmail(email) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return emailRegex.test(email);
+    }
+
+    // Cancel 버튼 처리
+    const cancelButton = document.querySelector('button.btn-secondary');
+    if (cancelButton) {
+        cancelButton.addEventListener('click', function(e) {
+            e.preventDefault();
+            window.location.href = '/profile/';
+        });
+    }
 });

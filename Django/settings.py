@@ -93,26 +93,18 @@ USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
 STATIC_URL = '/static/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, 'Aurora', 'Assets'),
+    os.path.join(BASE_DIR, 'Aurora', 'Assets'),  # Aurora/Assets 폴더
+    os.path.join(BASE_DIR, 'static'),           # 기본 static 폴더
 ]
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 # Media files
 MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'Aurora', 'Data')
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
-# Login settings
-LOGIN_URL = '/login/'  # 로그인이 필요할 때 리다이렉트될 URL
-LOGIN_REDIRECT_URL = '/'  # 로그인 성공 후 리다이렉트될 URL
-LOGOUT_REDIRECT_URL = '/'  # 로그아웃 후 리다이렉트될 URL
-
-# Session settings
-SESSION_COOKIE_AGE = 1209600  # 2주
-SESSION_EXPIRE_AT_BROWSER_CLOSE = False
 
 # CORS settings
 CORS_ALLOW_ALL_ORIGINS = True  # 개발 환경에서만 사용하세요. 프로덕션에서는 특정 도메인만 허용하도록 설정하세요.

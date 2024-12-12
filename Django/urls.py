@@ -4,6 +4,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.views.generic import TemplateView
 from django.contrib.auth.decorators import login_required
+from django.views.decorators.csrf import csrf_exempt
 from . import views
 
 urlpatterns = [
@@ -20,9 +21,10 @@ urlpatterns = [
     path('api/logout', views.logout, name='logout'),
     path('api/post', views.create_post, name='create_post'),
     path('api/profile', views.get_profile, name='get_profile'),
-    path('api/update-profile', views.update_profile, name='update_profile'),
     path('api/user-posts', views.get_user_posts, name='get_user_posts'),
     path('api/user-friends', views.get_user_friends, name='get_user_friends'),
     path('api/liked-posts', views.get_liked_posts, name='get_liked_posts'),
+    path('api/update-profile', views.update_profile, name='update_profile'),
+    path('api/feed-posts', views.get_feed_posts, name='get_feed_posts'),  
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT) \
   + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
