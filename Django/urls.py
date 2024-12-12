@@ -28,5 +28,10 @@ urlpatterns = [
     path('api/feed-posts', views.get_feed_posts, name='get_feed_posts'),
     path('api/toggle-like', views.toggle_like, name='toggle_like'),
     path('api/check-liked-posts', views.check_liked_posts, name='check_liked_posts'),
-] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT) \
-  + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    path('check-auth/', views.check_auth, name='check-auth'),
+]
+
+# Debug 모드일 때만 미디어 파일 서빙
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
