@@ -14,6 +14,7 @@ RUN apt-get update && apt-get install -y \
     dos2unix \
     mariadb-server \
     mariadb-client \
+    imagemagick \
     && rm -rf /var/lib/apt/lists/*
 
 # MariaDB 데이터 디렉토리 설정
@@ -28,8 +29,8 @@ RUN mysql_install_db --user=mysql --datadir=/var/lib/mysql
 WORKDIR /app
 
 # 정적 파일 및 미디어 디렉토리 생성
-RUN mkdir -p /app/staticfiles /app/media && \
-    chmod -R 755 /app/staticfiles /app/media
+RUN mkdir -p /app/staticfiles /app/Aurora/Data/media && \
+    chmod -R 755 /app/staticfiles /app/Aurora/Data/media
 
 # Assets 디렉토리 생성 (볼륨 마운트 포인트)
 RUN mkdir -p /app/Aurora/Assets && \
@@ -49,6 +50,10 @@ RUN pip3 install --no-cache-dir bcrypt
 # MariaDB 초기화 스크립트 복사
 COPY Maria/deploy_db.sql /docker-entrypoint-initdb.d/
 RUN chmod 755 /docker-entrypoint-initdb.d/deploy_db.sql
+
+# MariaDB 문자셋 설정
+COPY Maria/my.cnf /etc/mysql/conf.d/
+RUN chmod 644 /etc/mysql/conf.d/my.cnf
 
 # 나머지 프로젝트 파일 복사
 COPY . .
