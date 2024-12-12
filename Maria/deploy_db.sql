@@ -69,13 +69,13 @@ CREATE TABLE FEED_LIKE (
 
 # 테스트 데이터 삽입
 INSERT INTO auth_user (password, last_login, is_superuser, username, first_name, last_name, email, is_staff, is_active, date_joined)
-VALUES ('pbkdf2_sha256$600000$5IxGsKyQUCXZoZcEQlnlp7$bLtHI1gBXnLxQr1ZrM8GXoZP/6YZUv7YHKDZqCb0Nis=', NULL, 0, 'test_admin', '', '', 'test@aurora.com', 0, 1, NOW());
+VALUES ('pbkdf2_sha256$600000$bLtHI1gBXnLxQr1ZrM8GXoZP$6YZUv7YHKDZqCb0Nis5IxGsKyQUCXZoZcEQlnlp7=', NULL, 0, 'test_admin', '', '', 'test@aurora.com', 0, 1, NOW());
 
 INSERT INTO USER_INFO (`user_id`, `is_admin`, `is_official`, `username`, `bf_list`)
 VALUES (1, true, true, 'test_admin', NULL);
 
 INSERT INTO USER_ACCESS (`user_id`, `email`, `password`)
-VALUES (1, 'test@aurora.com', 'pbkdf2_sha256$600000$5IxGsKyQUCXZoZcEQlnlp7$bLtHI1gBXnLxQr1ZrM8GXoZP/6YZUv7YHKDZqCb0Nis=');
+VALUES (1, 'test@aurora.com', 'test1234');
 
 # 테스트 게시물 데이터 삽입
 INSERT INTO FEED_INFO (`feed_id`, `user_id`, `like_count`, `feed_type`) 
