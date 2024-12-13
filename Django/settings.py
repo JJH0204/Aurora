@@ -107,6 +107,10 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'Aurora', 'Data')
 
+# Profile files
+PROFILE_URL = '/Profile_images/'
+PROFILE_ROOT = os.path.join(BASE_DIR, 'Aurora', 'Data')
+
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 

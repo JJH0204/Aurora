@@ -245,7 +245,7 @@
                     const profileImages = document.querySelectorAll('.profile-image');
                     profileImages.forEach(img => {
                         if (data.profile_image) {
-                            img.src = `/media/Profile_images/${data.profile_image}`;
+                            img.src = `${data.profile_image}`;
                         } else {
                             img.src = '/static/img/default_profile.png';
                         }

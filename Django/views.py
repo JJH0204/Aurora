@@ -285,7 +285,7 @@ def get_profile(request, user_id=None):
             return JsonResponse({
                 'username': user_data[0],
                 'email': user_data[1],
-                'profile_image': f'/media/{user_data[2]}' if user_data[2] else None
+                'profile_image': f'/Profile_images/{user_data[2]}' if user_data[2] else None
             })
     except Exception as e:
         print(f"Error getting profile: {str(e)}")
