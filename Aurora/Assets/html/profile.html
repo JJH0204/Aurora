@@ -10,7 +10,7 @@
     <style>
         .profile-container {
             max-width: 935px;
-            margin: 10px auto;
+            margin: 80px auto;
             padding: 20px;
         }
 
@@ -32,7 +32,7 @@
             height: 150px;
             border-radius: 50%;
             object-fit: cover;
-            border: 1px solid #dbdbdb;
+            border: 2px solid #9384e3;
         }
 
         .profile-info {
@@ -185,12 +185,17 @@
         <button onclick="window.location.href='/save/'"><img src="{% static 'img/save.png' %}" alt="Save"></button>
     </div>
 
+    <!-- Arrow Down -->
+    <div class="arrow-down" style="cursor: pointer;">
+        <img src="{% static 'img/arrow.png' %}" alt="Arrow Down" style="transition: transform 0.3s ease;">
+    </div>
+
     <div class="container-fluid">
         <div class="main-content">
             <div class="profile-container">
                 <div class="profile-header">
                     <div class="profile-image-container">
-                        <img src="{% static 'img/default_profile.png' %}" alt="Profile Picture" class="profile-image">
+                        <img src="{% static 'img/profile.png' %}" alt="Profile Picture" class="profile-image">
                     </div>
                     <div class="profile-info">
                         <div class="profile-top">
@@ -245,7 +250,7 @@
                     const profileImages = document.querySelectorAll('.profile-image');
                     profileImages.forEach(img => {
                         if (data.profile_image) {
-                            img.src = `/media/Profile_images/${data.profile_image}`;
+                            img.src = `${data.profile_image}`;
                         } else {
                             img.src = '/static/img/default_profile.png';
                         }

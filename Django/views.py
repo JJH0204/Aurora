@@ -285,7 +285,7 @@ def get_profile(request, user_id=None):
             return JsonResponse({
                 'username': user_data[0],
                 'email': user_data[1],
-                'profile_image': f'/media/{user_data[2]}' if user_data[2] else None
+                'profile_image': f'/Profile_images/{user_data[2]}' if user_data[2] else None
             })
     except Exception as e:
         print(f"Error getting profile: {str(e)}")
@@ -302,7 +302,6 @@ def update_profile(request):
                 
                 # 저장 경로 설정
                 profile_images_dir = os.path.join(settings.MEDIA_ROOT, 'Profile_images')
-                os.makedirs(profile_images_dir, exist_ok=True)
                 
                 # 파일명 설정 (username_timestamp.확장자)
                 timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
