@@ -2,12 +2,12 @@
 function getImageUrl(imagePath, isStatic = false) {
     if (!imagePath) return '/static/img/default_post.png';
     
-    // 정적 이미지인 경우 static 경로 사용
+    // 정적 이미지인 경우 static 경로 사용  
     if (isStatic) {
         return `/static/img/${imagePath}`;
     }
     // 동적 이미지인 경우 media 경로 사용
-    return `/media/${imagePath}`;
+    return `/${imagePath}`;
 }
 
 // 시간 경과 계산 함수 추가

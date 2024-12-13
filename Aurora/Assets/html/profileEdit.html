@@ -39,9 +39,9 @@
                 <div class="profile-form">
                     <div class="profile-image-section">
                         <img id="profile-preview" src="{% if user_info.profile_image %}
-                            /home/test/Aurora/Aurora/Data/Profile_images/{{ user_info.profile_image }}
+                            /home/test/Aurora/Data/Profile_images/{{  user_info.profile_image }}
                         {% else %}
-                            {% static 'img/default-profile.png' %}
+                            {% static 'img/default_profile.png' %}
                         {% endif %}" alt="Profile Image" class="profile-image">
                         
                         <form id="profile-image-form" enctype="multipart/form-data">
@@ -121,7 +121,7 @@
 
         document.addEventListener('DOMContentLoaded', function() {
             // 프로필 정보 가져오기
-            fetch('/api/get-profile-info/')
+            fetch('/api/profile')
                 .then(response => response.json())
                 .then(data => {
                     if (data.status === 'success') {

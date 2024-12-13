@@ -234,7 +234,7 @@ def get_liked_posts(request):
         user_id = request.user.id
         
         with connection.cursor() as cursor:
-            # 사용자가 좋���요한 게시물 조회
+            # 사용자가 좋아요한 게시물 조회
             cursor.execute("""
                 SELECT f.feed_id, fd.desc, u.user_name,
                        (SELECT file_name FROM MEDIA_FILE WHERE feed_id = f.feed_id LIMIT 1) as image,
@@ -263,7 +263,7 @@ def get_liked_posts(request):
 
     except Exception as e:
         print(f"Error fetching liked posts: {str(e)}")
-        return JsonResponse({'message': '좋아요한 게시물을 불러오는 중 오류가 발생했습니다.'}, status=500)
+        return JsonResponse({'message': '좋아요한 게시물을 불러오는 중 오��가 발생했습니다.'}, status=500)
 
 
 @csrf_exempt
@@ -272,7 +272,7 @@ def get_profile(request, user_id=None):
     try:
         with connection.cursor() as cursor:
             cursor.execute("""
-                SELECT ui.username, ua.email, ui.profile_image
+                SELECT ui.username, ua.email, ui.profile_image, ui.bio
                 FROM USER_INFO ui
                 JOIN USER_ACCESS ua ON ui.user_id = ua.user_id
                 WHERE ui.user_id = %s
@@ -285,7 +285,8 @@ def get_profile(request, user_id=None):
             return JsonResponse({
                 'username': user_data[0],
                 'email': user_data[1],
-                'profile_image': f'/Profile_images/{user_data[2]}' if user_data[2] else None
+                'profile_image': f'/media/{user_data[2]}' if user_data[2] else None,
+                'bio': user_data[3] or ''  # bio 정보 추가
             })
     except Exception as e:
         print(f"Error getting profile: {str(e)}")
@@ -300,13 +301,19 @@ def update_profile(request):
             if 'profile_image' in request.FILES:
                 profile_image = request.FILES['profile_image']
                 
-                # 저장 경로 설정
+                # 저장 경로 수정
                 profile_images_dir = os.path.join(settings.MEDIA_ROOT, 'Profile_images')
+                os.makedirs(profile_images_dir, exist_ok=True)
                 
-                # 파일명 설정 (username_timestamp.확장자)
+                # 파일명 설정
                 timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
                 file_extension = os.path.splitext(profile_image.name)[1]
                 new_filename = f"{request.user.username}_{timestamp}{file_extension}"
+                
+                # 상대 경로로 저장 (DB에 저장될 경로)
+                relative_path = f"Profile_images/{new_filename}"
+                
+                # 전체 경로 (실제 파일 저장 위치)
                 file_path = os.path.join(profile_images_dir, new_filename)
                 
                 # 파일 저장
@@ -314,13 +321,13 @@ def update_profile(request):
                     for chunk in profile_image.chunks():
                         destination.write(chunk)
                 
-                # DB에 프로필 이미지 경로 업데이트
+                # DB에 상대 경로 저장
                 with connection.cursor() as cursor:
                     cursor.execute("""
                         UPDATE USER_INFO 
                         SET profile_image = %s 
                         WHERE user_id = %s
-                    """, [new_filename, request.user.id])
+                    """, [relative_path, request.user.id])
 
             # 프로필 정보 업데이트 (username, email, bio)
             data = json.loads(request.body)

@@ -14,6 +14,8 @@ CREATE TABLE USER_INFO (
     `bf_list` VARCHAR(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
     # 프로필 이미지 DB 추가
     `profile_image` VARCHAR(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
+    # 자기소개 컬럼 추가
+    `bio` TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE FEED_INFO (
@@ -73,8 +75,8 @@ CREATE TABLE FEED_LIKE (
 INSERT INTO auth_user (password, last_login, is_superuser, username, first_name, last_name, email, is_staff, is_active, date_joined)
 VALUES ('pbkdf2_sha256$600000$bLtHI1gBXnLxQr1ZrM8GXoZP$6YZUv7YHKDZqCb0Nis5IxGsKyQUCXZoZcEQlnlp7=', NULL, 0, 'test_admin', '', '', 'test@aurora.com', 0, 1, NOW());
 
-INSERT INTO USER_INFO (`user_id`, `is_admin`, `is_official`, `username`, `bf_list`, `profile_image`)
-VALUES (1, true, true, 'test_admin', NULL);
+INSERT INTO USER_INFO (`user_id`, `is_admin`, `is_official`, `username`, `bf_list`, `profile_image`, `bio`)
+VALUES (1, true, true, 'test_admin', NULL, '', '');
 
 INSERT INTO USER_ACCESS (`user_id`, `email`, `password`)
 VALUES (1, 'test@aurora.com', 'test1234');
