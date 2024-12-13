@@ -83,6 +83,12 @@ function createPostCard(post) {
     
     card.appendChild(headerDiv);
 
+    // aurora_db의 Feed-desc 테이블에서 desc 를 가져와서 출력
+    const descriptionDiv = document.createElement('div');
+    descriptionDiv.className = 'post-description';
+    descriptionDiv.textContent =  `@${post.desc}`; # aurora_db의 Feed-desc 테이블에서 desc 를 가져와서 출력
+    card.appendChild(descriptionDiv);
+
     // 미디어 슬라이더 생성
     const mediaSlider = document.createElement('div');
     mediaSlider.className = 'media-slider';
