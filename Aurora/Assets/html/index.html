@@ -91,12 +91,16 @@
             }
         }
 
-        function likePost(feedId, heartIcon) {
+        // 좋아요 기능 함수 - 새로 추가
+        function toggleLike(element, feedId) {
+            // CSRF 토큰 가져오기
+            const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+            
             fetch('/api/like-post', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRFToken': getCookie('csrftoken')  // CSRF 토큰 추가
+                    'X-CSRFToken': csrftoken
                 },
                 body: JSON.stringify({
                     feed_id: feedId
@@ -104,17 +108,18 @@
             })
             .then(response => response.json())
             .then(data => {
+                const heartIcon = element.querySelector('img');
+                const likeCount = element.nextElementSibling;
+                
                 if (data.status === 'liked') {
-                    heartIcon.classList.add('liked');
-                    // 좋아요 수 업데이트
-                    const likeCount = heartIcon.nextElementSibling;
+                    // 좋아요 성공
+                    heartIcon.src = '/static/img/heart_filled.png';
                     if (likeCount) {
                         likeCount.textContent = parseInt(likeCount.textContent || '0') + 1;
                     }
                 } else if (data.status === 'unliked') {
-                    heartIcon.classList.remove('liked');
-                    // 좋아요 수 업데이트
-                    const likeCount = heartIcon.nextElementSibling;
+                    // 좋아요 취소
+                    heartIcon.src = '/static/img/heart.png';
                     if (likeCount) {
                         likeCount.textContent = parseInt(likeCount.textContent || '0') - 1;
                     }
@@ -124,22 +129,6 @@
                 console.error('Error:', error);
                 alert('좋아요 처리 중 오류가 발생했습니다.');
             });
-        }
-
-        // CSRF 토큰을 가져오는 함수
-        function getCookie(name) {
-            let cookieValue = null;
-            if (document.cookie && document.cookie !== '') {
-                const cookies = document.cookie.split(';');
-                for (let i = 0; i < cookies.length; i++) {
-                    const cookie = cookies[i].trim();
-                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                        break;
-                    }
-                }
-            }
-            return cookieValue;
         }
     </script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
