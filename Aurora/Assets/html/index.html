@@ -9,36 +9,38 @@
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
 </head>
 <body>
-    <!-- Header Section -->
-    <div class="header">
-        <div class="search-container">
-            <input type="text" class="form-control search" placeholder="Aurora">
-            <img src="{% static 'img/search.png' %}" alt="Search">
+    <div class="wrapper">
+        <!-- Header Section -->
+        <div class="header">
+            <div class="search-container">
+                <input type="text" class="form-control search" placeholder="Aurora">
+                <img src="{% static 'img/search.png' %}" alt="Search">
+            </div>
+            {% if user.is_authenticated %}
+                <button class="login-btn" onclick="confirmLogout()">Logout</button>
+            {% else %}
+                <button class="login-btn" onclick="window.location.href='/login/'">Login</button>
+            {% endif %}
         </div>
-        {% if user.is_authenticated %}
-            <button class="login-btn" onclick="confirmLogout()">Logout</button>
-        {% else %}
-            <button class="login-btn" onclick="window.location.href='/login/'">Login</button>
-        {% endif %}
-    </div>
 
-    <!-- Side Menu -->
-    <div class="side-menu">
-        <button onclick="checkLoginAndNavigate('/')"><img src="{% static 'img/aurora_logo.png' %}" alt="Aurora Logo"></button>
-        <button onclick="checkLoginAndNavigate('/post/')"><img src="{% static 'img/post.png' %}" alt="Post"></button>
-        <button onclick="checkLoginAndNavigate('/profile/')"><img src="{% static 'img/people.png' %}" alt="Profile"></button>
-        <button onclick="checkLoginAndNavigate('/save/')"><img src="{% static 'img/save.png' %}" alt="Save"></button>
-    </div>
+        <!-- Side Menu -->
+        <div class="side-menu">
+            <button onclick="checkLoginAndNavigate('/')"><img src="{% static 'img/aurora_logo.png' %}" alt="Aurora Logo"></button>
+            <button onclick="checkLoginAndNavigate('/post/')"><img src="{% static 'img/post.png' %}" alt="Post"></button>
+            <button onclick="checkLoginAndNavigate('/profile/')"><img src="{% static 'img/people.png' %}" alt="Profile"></button>
+            <button onclick="checkLoginAndNavigate('/save/')"><img src="{% static 'img/save.png' %}" alt="Save"></button>
+        </div>
 
-    <!-- Arrow Down -->
-    <div class="arrow-down" style="cursor: pointer;">
-        <img src="{% static 'img/arrow.png' %}" alt="Arrow Down" style="transition: transform 0.3s ease;">
-    </div>
+        <!-- Arrow Down -->
+        <div class="arrow-down">
+            <img src="{% static 'img/arrow.png' %}" alt="Arrow Down" style="transition: transform 0.3s ease;">
+        </div>
 
-    <div class="container-fluid">
-        <div class="main-content">
-            <div class="feed">
-                <!-- 여기서 JavaScript로 포스트가 동적으로 생성됩니다 -->
+        <div class="container-fluid">
+            <div class="main-content">
+                <div class="feed">
+                    <!-- 여기서 JavaScript로 포스트가 동적으로 생성됩니다 -->
+                </div>
             </div>
         </div>
     </div>

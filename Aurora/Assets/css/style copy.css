@@ -6,24 +6,15 @@ body {
     color: #6c7293;
 }
 
-.wrapper {
-    max-width: 1200px;
-    margin: 0 auto;
-    position: relative;
-    padding: 0 20px;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-}
-
 .container-fluid {
     display: flex;
     height: calc(100vh - 160px);
     max-width: 700px;
     margin: 0 auto;
-    position: relative;
-    left: auto;
-    transform: none;
+    margin-top: 20px;
+    position: fixed;
+    left: 50%;
+    transform: translateX(-50%);
     border-radius: 10px;
     overflow: visible;
 }
@@ -36,9 +27,6 @@ body {
     position: relative;
     width: 100%;
     height: 60px;
-    max-width: 1200px;
-    margin: 0 auto;
-    position: relative;
 }
 
 .header img {
@@ -76,8 +64,9 @@ body {
 
 /* Login 버튼 스타일 */
 .login-btn {
-    position: absolute; /* fixed에서 absolute로 변경 */
-    right: 20px; /* 오른쪽 여백 */
+    position: fixed;
+    top: 20px;
+    right: 40px;
     padding: 8px 20px;
     background-color: #a193e7;
     color: #f7f7fb;
@@ -96,13 +85,12 @@ body {
 /* 사이드 메뉴 스타일 */
 .side-menu {
     position: fixed;
-    left: calc((100% - 1200px) / 2 + 20px);
+    left: 20px;
     top: 50%;
     transform: translateY(-50%);
     display: flex;
     flex-direction: column;
     gap: 30px;
-    z-index: 10;
 }
 
 .side-menu img {

@@ -13,25 +13,33 @@
         /* 메인 컨텐츠 영역 */
         .main-content {
             flex: 1;
+            padding: 20px;
             box-sizing: border-box;
-            width: 100%;
-            padding: 10px 0;
-            height: auto;
+            overflow-y: auto;
+            height: calc(90vh - 60px);
             -ms-overflow-style: none;
             scrollbar-width: none;
             pointer-events: auto;
+            width: 100%;
         }
 
         .post-container {
             max-width: 600px;
             width: 100%;
+            height: 200px;
             margin: 0 auto;
-            padding: 0;
+            padding: 20px;
+        }
+    
+        .main-content {
+            padding-top: 10px;
+            height: 100%;
+            width: 100%;
         }
     
         .upload-container {
             max-width: 100%;
-            min-height: 750px;
+            min-height: 700px;
             background: white;
             border-radius: 20px;
             padding: 20px;
@@ -42,6 +50,7 @@
             background-clip: padding-box;
             position: relative;
             box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+            margin: 0 auto;
         }
     
         .upload-container::before {
@@ -59,23 +68,20 @@
     
         .image-section {
             flex: 1;
-            min-height: 300px;
+            min-height: 400px;
         }
     
         .text-section {
             flex: 1;
-            min-height: 250px;
+            min-height: 300px;
             border-top: 1px solid #dbdbdb;
             border-left: none;
             padding-top: 20px;
             padding-left: 0;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
         }
     
         .image-preview {
-            height: 300px;
+            height: 400px;
             width: 100%;
             background: #fafafa;
             display: flex;
@@ -124,7 +130,7 @@
     
         textarea {
             width: 100%;
-            height: 250px;
+            height: 200px;
             padding: 10px;
             border: none;
             resize: none;
