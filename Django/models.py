@@ -6,7 +6,7 @@ class UserInfo(models.Model):
     is_official = models.BooleanField(default=False)
     username = models.CharField(max_length=50)
     bf_list = models.CharField(max_length=255, blank=True)
-
+    profile_image = models.CharField(max_length=255)    
     class Meta:
         db_table = 'USER_INFO'
 

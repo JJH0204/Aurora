@@ -302,7 +302,6 @@ def update_profile(request):
                 
                 # 저장 경로 설정
                 profile_images_dir = os.path.join(settings.MEDIA_ROOT, 'Profile_images')
-                os.makedirs(profile_images_dir, exist_ok=True)
                 
                 # 파일명 설정 (username_timestamp.확장자)
                 timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
