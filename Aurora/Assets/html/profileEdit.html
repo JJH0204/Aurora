@@ -88,12 +88,13 @@
                 };
                 reader.readAsDataURL(input.files[0]);
 
-                // 이미지 업로드
+                // 이미지 업로드를 위한 FormData 생성
                 const formData = new FormData();
                 formData.append('profile_image', input.files[0]);
                 
                 const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
 
+                // 프로필 이미지 업로드 요청
                 fetch('/api/update-profile/', {
                     method: 'POST',
                     headers: {
@@ -105,6 +106,8 @@
                 .then(data => {
                     if (data.status === 'success') {
                         alert('프로필 이미지가 성공적으로 업데이트되었습니다.');
+                        // 모든 프로필 이미지 업데이트
+                        updateAllProfileImages();
                     } else {
                         alert(data.message || '프로필 이미지 업데이트에 실패했습니다.');
                     }
@@ -189,12 +192,13 @@
         }
 
         function saveProfile() {
-            const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
             const formData = {
                 username: document.getElementById('username').value.trim(),
                 email: document.getElementById('email').value.trim(),
                 bio: document.getElementById('bio').value.trim()
             };
+
+            const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
 
             fetch('/api/update-profile/', {
                 method: 'POST',
@@ -216,6 +220,15 @@
             .catch(error => {
                 console.error('Error:', error);
                 alert('프로필 업데이트 중 오류가 발생했습니다.');
+            });
+        }
+
+        // 모든 프로필 이미지 업데이트 함수 추가
+        function updateAllProfileImages() {
+            const profileImages = document.querySelectorAll('.profile-image');
+            const newImageUrl = document.getElementById('profile-preview').src;
+            profileImages.forEach(img => {
+                img.src = newImageUrl;
             });
         }
     </script>

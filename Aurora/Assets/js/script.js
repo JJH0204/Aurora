@@ -231,37 +231,7 @@ function createPostCard(post) {
                     alert('좋아요를 누르려면 로그인이 필요합니다.');
                     return;
                 }
-                fetch('/api/toggle-like', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ feed_id: postId })
-                })
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Network response was not ok');
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    if (data.is_liked !== undefined) {
-                        this.src = getImageUrl(`like_${data.is_liked ? 'on' : 'off'}.png`, true);
-                        likeCount.textContent = data.likes_count || 0;
-                        
-                        this.classList.remove('animate');
-                        void this.offsetWidth;
-                        this.classList.add('animate');
-                        
-                        setTimeout(() => {
-                            this.classList.remove('animate');
-                        }, 500);
-                    }
-                })
-                .catch(error => {
-                    console.error('좋아요 토글 중 오류:', error);
-                    alert('좋아요 처리 중 오류가 발생했습니다.');
-                });
+                toggleLike(postId);
             })
             .catch(error => {
                 console.error('인증 확인 중 오류 발생:', error);
@@ -455,3 +425,26 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+
+function toggleLike(postId) {
+    fetch('/api/toggle-like', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ feed_id: postId })  // postId가 올바르게 전달되는지 확인
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        return response.json();
+    })
+    .then(data => {
+        // 좋아요 상태 업데이트
+    })
+    .catch(error => {
+        console.error('좋아요 토글 중 오류:', error);
+        alert('좋아요 처리 중 오류가 발생했습니다.');
+    });
+}
