@@ -76,8 +76,9 @@ body {
 
 /* Login 버튼 스타일 */
 .login-btn {
-    position: absolute; 
-    right: 20px;
+    position: fixed;
+    right: 0;
+    top: 20px;
     padding: 8px 20px;
     background-color: #a193e7;
     color: #f7f7fb;
@@ -87,6 +88,7 @@ body {
     transition: background-color 0.3s ease;
     width: 100px;
     z-index: 3;
+    margin-right: 10px;
 }
 
 .login-btn:hover {
@@ -96,13 +98,14 @@ body {
 /* 사이드 메뉴 스타일 */
 .side-menu {
     position: fixed;
-    left: calc((100% - 1200px) / 2 + 20px);
+    left: 0;
     top: 50%;
     transform: translateY(-50%);
     display: flex;
     flex-direction: column;
     gap: 30px;
     z-index: 10;
+    padding-left: 10px;
 }
 
 .side-menu img {
