@@ -90,8 +90,11 @@
             display: flex;
             flex-direction: column;
             align-items: center;
+            justify-content: center;
             text-align: center;
             padding: 24px;
+            width: 100%;
+            height: 100%;
         }
     
         .image-preview .placeholder img {
@@ -184,11 +187,7 @@
             <input type="text" class="form-control search" placeholder="Aurora">
             <img src="{% static 'img/search.png' %}" alt="Search">
         </div>
-        {% if user.is_authenticated %}
-            <button class="login-btn" onclick="confirmLogout()">Logout</button>
-        {% else %}
-            <button class="login-btn" onclick="window.location.href='/login/'">Login</button>
-        {% endif %}
+        <button class="login-btn" onclick="window.location.href='/login/'">login</button>
     </div>
 
     <!-- Side Menu -->
