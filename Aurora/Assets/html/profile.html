@@ -10,7 +10,7 @@
     <style>
         .profile-container {
             max-width: 935px;
-            margin: 80px auto;
+            margin: 10px auto;
             padding: 20px;
         }
 
@@ -75,6 +75,10 @@
             font-weight: 600;
             font-size: 14px;
             border: 1px solid rgba(167, 139, 250, 0.3);
+        }
+
+        .edit-profile-btn:hover {
+            background-color: rgba(167, 139, 250, 0.1);
         }
 
         .profile-stats {
@@ -167,6 +171,27 @@
             align-items: center;
             gap: 7px;
         }
+
+        /* 새로운 버튼 스타일 추가 */
+        .profile-action-btn {
+            background-color: transparent;
+            padding: 7px 16px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 14px;
+            border: 1px solid rgba(167, 139, 250, 0.3);
+        }
+
+        /* Save Changes 버튼 기본 색상 */
+        .save-changes-btn {
+            background-color: rgba(167, 139, 250, 0.3);
+            color: white; /* 텍스트 색상 */
+        }
+
+        /* Save Changes 버튼 호버 시 색상 진하게 */
+        .save-changes-btn:hover {
+            background-color: rgba(167, 139, 250, 0.5); /* 진한 연보라색 */
+        }
     </style>
 </head>
 <body>
@@ -188,11 +213,6 @@
         <button onclick="window.location.href='/'"><img src="{% static 'img/aurora_logo.png' %}" alt="Aurora Logo"></button>
         <button onclick="window.location.href='/post/'"><img src="{% static 'img/post.png' %}" alt="Post"></button>
         <button onclick="window.location.href='/profile/'"><img src="{% static 'img/people.png' %}" alt="Profile"></button>
-    </div>
-
-    <!-- Arrow Down -->
-    <div class="arrow-down" style="cursor: pointer;">
-        <img src="{% static 'img/arrow.png' %}" alt="Arrow Down" style="transition: transform 0.3s ease;">
     </div>
 
     <div class="container-fluid">
