@@ -219,7 +219,7 @@ function createPostCard(post) {
     footerDiv.appendChild(dateDiv);
     card.appendChild(footerDiv);
 
-        
+    
     return card;
 }
 
@@ -233,22 +233,17 @@ function formatDate(dateString) {
 }
 
 
+function toggleLike(element, feedId) {
+    const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
 
-document.addEventListener('DOMContentLoaded', function() {
-    const feed = document.querySelector('.feed');
-    
-    // 먼저 인증 상태 확인
-    fetch('/check-auth/')
-        .then(response => response.json())
-        .then(authData => {
-            // 로그인한 경우에만 좋아요 목록 가져오기
-            if (authData.isAuthenticated) {
-                return fetch('/api/check-liked-posts')
-                    .then(response => response.json())
-                    .then(likedData => likedData.liked_posts);
-            }
-            return [];  // 로그인하지 않은 경우 빈 배열 반환
-        })
+    fetch('/api/like-post', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrftoken
+        },
+        body: JSON.stringify({ feed_id: feedId })
+    })
         .then(likedPostIds => {
             // 서버에서 피드 게시물 가져오기
             return fetch('/api/feed-posts')
@@ -265,7 +260,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         media_files: post.media_files || [],
                         content: post.content,
                         userImage: post.userImage || 'default_profile.png',
-                        nickname: post.nickname,
+                        username: post.username,
                         userId: post.userId,
                         date: post.date ? formatDate(post.date) : '날짜 없음',
                         likes: post.likes || 0,
@@ -284,7 +279,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const feed = document.querySelector('.feed');
             feed.innerHTML = '<p class="error-message">게시물을 불러올 수 없습니다. 잠시 후 다시 시도해주세요.</p>';
         });
-});
+};
 
 // 페이지 로드 시 포스트 생성 및 arrow 버튼 이벤트 추가
 document.addEventListener('DOMContentLoaded', function() {

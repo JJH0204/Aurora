@@ -358,15 +358,15 @@ def get_feed_posts(request):
         feeds = [dict(zip(columns, row)) for row in cursor.fetchall()]
         
         # 로그인한 사용자의 좋아요 상태 확인
-        liked_posts = set()
+        like_post = set()
         if request.user.is_authenticated:
             cursor.execute("""
                 SELECT feed_id FROM FEED_LIKE WHERE user_id = %s
             """, [request.user.id])
-            liked_posts = {row[0] for row in cursor.fetchall()}
+            like_post = {row[0] for row in cursor.fetchall()}
         
         for feed in feeds:
-            feed['isLiked'] = feed['feed_id'] in liked_posts
+            feed['isLiked'] = feed['feed_id'] in like_post
             
             # 각 게시물의 모든 미디어 파일 가져오기
             cursor.execute("""
