@@ -6,26 +6,17 @@ body {
     color: #6c7293;
 }
 
-.wrapper {
-    max-width: 1200px;
-    margin: 0 auto;
-    position: relative;
-    padding: 0 20px;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-}
-
 .container-fluid {
     display: flex;
-    height: calc(100vh - 120px);
+    height: calc(100vh - 160px);
     max-width: 700px;
     margin: 0 auto;
-    position: relative;
-    left: auto;
-    transform: none;
+    margin-top: 20px;
+    position: fixed;
+    left: 50%;
+    transform: translateX(-50%);
     border-radius: 10px;
-    overflow: hidden;
+    overflow: visible;
 }
 
 /* Header 스타일 */
@@ -36,9 +27,6 @@ body {
     position: relative;
     width: 100%;
     height: 60px;
-    max-width: 1200px;
-    margin: 0 auto;
-    position: relative;
 }
 
 .header img {
@@ -76,8 +64,9 @@ body {
 
 /* Login 버튼 스타일 */
 .login-btn {
-    position: absolute; 
-    right: 20px;
+    position: fixed;
+    top: 20px;
+    right: 40px;
     padding: 8px 20px;
     background-color: #a193e7;
     color: #f7f7fb;
@@ -96,13 +85,12 @@ body {
 /* 사이드 메뉴 스타일 */
 .side-menu {
     position: fixed;
-    left: calc((100% - 1200px) / 2 + 20px);
+    left: 20px;
     top: 50%;
     transform: translateY(-50%);
     display: flex;
     flex-direction: column;
     gap: 30px;
-    z-index: 10;
 }
 
 .side-menu img {
@@ -129,12 +117,12 @@ body {
 }
 
 .side-menu button img {
-    filter: opacity(0.7) drop-shadow(0 0 0 #a193e7);
+    filter: opacity(0.7) drop-shadow(0 0 0 #a193e7); /* 기본 상태 */
     transition: all 0.3s ease;
 }
 
 .side-menu button:hover img {
-    filter: opacity(0.9) drop-shadow(0 0 0 #8c7ae6); 
+    filter: opacity(0.9) drop-shadow(0 0 0 #8c7ae6); /* 호버 시 더 진한 색상 */
     transform: scale(1.2);
 }
 
@@ -147,11 +135,11 @@ body {
 .arrow-down {
     position: fixed;
     left: 50%;
-    bottom: 10px;
+    bottom: 30px;
     transform: translateX(-50%);
     cursor: pointer;
-    width: 40px;
-    height: 40px;
+    width: 60px;
+    height: 60px;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -160,8 +148,8 @@ body {
 }
 
 .arrow-down img {
-    width: 20px;
-    height: 20px;
+    width: 30px;
+    height: 30px;
     transform: rotate(90deg);
     transition: transform 0.3s ease;
 }
@@ -173,15 +161,14 @@ body {
 /* 메인 컨텐츠 영역 */
 .main-content {
     flex: 1;
-    padding: 20px;
+    padding: 0 20px;
     box-sizing: border-box;
     overflow: hidden;
     scroll-snap-type: y proximity;
-    height: calc(100vh - 120px);
+    height: calc(100vh - 160px);
     -ms-overflow-style: none;
     scrollbar-width: none;
     pointer-events: auto;
-    position: relative;
 }
 
 .main-content .feed {
@@ -192,8 +179,6 @@ body {
     gap: 20px;
     padding: 20px 0;
     transition: transform 0.5s ease;
-    position: relative;
-    top: 0;
 }
 
 /* 스크롤바 숨기기 */
