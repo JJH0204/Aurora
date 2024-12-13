@@ -354,7 +354,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 media_files: post.media_files || [],
                 content: post.content,
                 userImage: post.userImage || 'default_profile.png',
-                nickname: post.nickname,
+                username: post.username,
                 date: post.date,
                 likes: post.likes || 0,
                 isLiked: false,

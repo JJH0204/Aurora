@@ -229,7 +229,7 @@ def get_user_friends(request):
 
     except Exception as e:
         print(f"Error fetching friends: {str(e)}")
-        return JsonResponse({'message': '친구 목록을 불���오는 중 오류가 발생했습니다.'}, status=500)
+        return JsonResponse({'message': '친구 목록을 불러오는 중 오류가 발생했습니다.'}, status=500)
 
 @csrf_exempt
 @login_required
@@ -394,7 +394,7 @@ def get_feed_posts(request):
         columns = [col[0] for col in cursor.description]
         feeds = [dict(zip(columns, row)) for row in cursor.fetchall()]
         
-        # 로그인한 사용자의 좋아요 상태 확���
+        # 로그인한 사용자의 좋아요 상태 확인
         liked_posts = set()
         if request.user.is_authenticated:
             cursor.execute("""
@@ -430,7 +430,7 @@ def toggle_like(request):
 
         # 유효성 검사
         if not feed_id:
-            return JsonResponse({'message': 'feed_id가 필요���니다.'}, status=400)
+            return JsonResponse({'message': 'feed_id가 필요합니다.'}, status=400)
 
         # feed_id가 FEED_INFO에 존재하는지 확인
         with connection.cursor() as cursor:
