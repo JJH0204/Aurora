@@ -301,23 +301,13 @@ def update_profile(request):
                 profile_image = request.FILES['profile_image']
                 
                 # 저장 경로 설정
-                profile_images_dir = '/home/test/Aurora/Aurora/Data/Profile_images'
+                profile_images_dir = os.path.join(settings.MEDIA_ROOT, 'Profile_images')
                 os.makedirs(profile_images_dir, exist_ok=True)
                 
-                # 파일 날짜 형식 설정 (YYYYMMDD)
-                current_date = datetime.now().strftime('%Y%m%d')
-                
-                # 현재 사용자의 username 가져오기
-                with connection.cursor() as cursor:
-                    cursor.execute("""
-                        SELECT username FROM USER_INFO 
-                        WHERE user_id = %s
-                    """, [request.user.id])
-                    username = cursor.fetchone()[0]
-                
-                # 파일명 설정 (username_YYYYMMDD.확장자)
+                # 파일명 설정 (username_timestamp.확장자)
+                timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
                 file_extension = os.path.splitext(profile_image.name)[1]
-                new_filename = f"{username}_{current_date}{file_extension}"
+                new_filename = f"{request.user.username}_{timestamp}{file_extension}"
                 file_path = os.path.join(profile_images_dir, new_filename)
                 
                 # 파일 저장
@@ -416,7 +406,6 @@ def get_feed_posts(request):
         return JsonResponse({'posts': feeds}, json_dumps_params={'ensure_ascii': False})
 
 @csrf_exempt
-@login_required
 def toggle_like(request):
     if request.method != 'POST':
         return JsonResponse({'message': '잘못된 요청 방식입니다.'}, status=405)
@@ -434,6 +423,7 @@ def toggle_like(request):
         with transaction.atomic():
             # 이미 좋아요를 눌렀는지 확인
             with connection.cursor() as cursor:
+                print(f"Checking if user {user_id} already liked post {feed_id}")  # 로그 추가
                 cursor.execute("""
                     SELECT COUNT(*) FROM FEED_LIKE 
                     WHERE user_id = %s AND feed_id = %s
@@ -443,6 +433,7 @@ def toggle_like(request):
             if is_already_liked:
                 # 좋아요 취소
                 with connection.cursor() as cursor:
+                    print(f"User {user_id} is unliking post {feed_id}")  # 로그 추가
                     cursor.execute("""
                         DELETE FROM FEED_LIKE 
                         WHERE user_id = %s AND feed_id = %s
@@ -463,6 +454,7 @@ def toggle_like(request):
             else:
                 # 좋아요 추가
                 with connection.cursor() as cursor:
+                    print(f"User {user_id} is liking post {feed_id}")  # 로그 추가
                     cursor.execute("""
                         INSERT INTO FEED_LIKE (user_id, feed_id, like_date) 
                         VALUES (%s, %s, NOW())
