@@ -18,14 +18,14 @@ body {
 
 .container-fluid {
     display: flex;
-    height: calc(100vh - 160px);
+    height: calc(100vh - 120px);
     max-width: 700px;
     margin: 0 auto;
     position: relative;
     left: auto;
     transform: none;
     border-radius: 10px;
-    overflow: visible;
+    overflow: hidden;
 }
 
 /* Header 스타일 */
@@ -76,8 +76,8 @@ body {
 
 /* Login 버튼 스타일 */
 .login-btn {
-    position: absolute; /* fixed에서 absolute로 변경 */
-    right: 20px; /* 오른쪽 여백 */
+    position: absolute; 
+    right: 20px;
     padding: 8px 20px;
     background-color: #a193e7;
     color: #f7f7fb;
@@ -129,12 +129,12 @@ body {
 }
 
 .side-menu button img {
-    filter: opacity(0.7) drop-shadow(0 0 0 #a193e7); /* 기본 상태 */
+    filter: opacity(0.7) drop-shadow(0 0 0 #a193e7);
     transition: all 0.3s ease;
 }
 
 .side-menu button:hover img {
-    filter: opacity(0.9) drop-shadow(0 0 0 #8c7ae6); /* 호버 시 더 진한 색상 */
+    filter: opacity(0.9) drop-shadow(0 0 0 #8c7ae6); 
     transform: scale(1.2);
 }
 
@@ -147,11 +147,11 @@ body {
 .arrow-down {
     position: fixed;
     left: 50%;
-    bottom: 30px;
+    bottom: 10px;
     transform: translateX(-50%);
     cursor: pointer;
-    width: 60px;
-    height: 60px;
+    width: 40px;
+    height: 40px;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -160,8 +160,8 @@ body {
 }
 
 .arrow-down img {
-    width: 30px;
-    height: 30px;
+    width: 20px;
+    height: 20px;
     transform: rotate(90deg);
     transition: transform 0.3s ease;
 }
@@ -173,14 +173,15 @@ body {
 /* 메인 컨텐츠 영역 */
 .main-content {
     flex: 1;
-    padding: 0 20px;
+    padding: 20px;
     box-sizing: border-box;
     overflow: hidden;
     scroll-snap-type: y proximity;
-    height: calc(100vh - 160px);
+    height: calc(100vh - 120px);
     -ms-overflow-style: none;
     scrollbar-width: none;
     pointer-events: auto;
+    position: relative;
 }
 
 .main-content .feed {
@@ -191,6 +192,8 @@ body {
     gap: 20px;
     padding: 20px 0;
     transition: transform 0.5s ease;
+    position: relative;
+    top: 0;
 }
 
 /* 스크롤바 숨기기 */
