@@ -7,7 +7,7 @@ function getImageUrl(imagePath, isStatic = false) {
         return `/static/img/${imagePath}`;
     }
     // 동적 이미지인 경우 media 경로 사용
-    return `/${imagePath}`;
+    return `/media/${imagePath}`;
 }
 
 // 시간 경과 계산 함수 추가
@@ -219,57 +219,7 @@ function createPostCard(post) {
     footerDiv.appendChild(dateDiv);
     card.appendChild(footerDiv);
 
-    // 좋아요 기능
-    likeIcon.addEventListener('click', function(e) {
-        e.stopPropagation();
-        const postId = this.dataset.postId;
         
-        fetch('/check-auth/')
-            .then(response => response.json())
-            .then(data => {
-                if (!data.isAuthenticated) {
-                    alert('좋아요를 누르려면 로그인이 필요합니다.');
-                    return;
-                }
-                fetch('/api/toggle-like', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        
-                    },
-                    body: JSON.stringify({ feed_id: postId })
-                })
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Network response was not ok');
-                    }
-                    return response.json();
-                })
-                
-                .then(data => {
-                    if (data.is_liked !== undefined) {
-                        this.src = getImageUrl(`like_${data.is_liked ? 'on' : 'off'}.png`, true);
-                        likeCount.textContent = data.likes_count || 0;
-                        
-                        this.classList.remove('animate');
-                        void this.offsetWidth;
-                        this.classList.add('animate');
-                        
-                        setTimeout(() => {
-                            this.classList.remove('animate');
-                        }, 500);
-                    }
-                })
-                .catch(error => {
-                    console.error('좋아요 토글 중 오류:', error);
-                    alert('좋아요 처리 중 오류가 발생했습니다.');
-                });
-            })
-            .catch(error => {
-                console.error('인증 확인 중 오류 발생:', error);
-            });
-    });
-
     return card;
 }
 
@@ -404,18 +354,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
-// 게시물 목록을 렌더링하는 부분
-data.posts.forEach(post => {
-    const postElement = document.createElement('div');
-    postElement.innerHTML = `
-        <h3><a href="/profile/${post.user_id}/">${post.author}</a></h3>  <!-- 사용자 이름 클릭 시 프로필로 이동 -->
-        <p>${post.description}</p>
-        <img src="${post.image_url}" alt="Post Image">
-        <p>Likes: ${post.likes}</p>
-        <p>Comments: ${post.comments}</p>
-    `;
-    document.querySelector('.post-container').appendChild(postElement);
-});
+
 
 document.addEventListener('DOMContentLoaded', function() {
     const saveButton = document.querySelector('#saveChanges');

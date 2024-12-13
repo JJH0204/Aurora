@@ -23,12 +23,10 @@ urlpatterns = [
     path('api/profile', views.get_profile, name='get_profile'),
     path('api/user-posts', views.get_user_posts, name='get_user_posts'),
     path('api/user-friends', views.get_user_friends, name='get_user_friends'),
-    path('api/liked-posts', views.get_liked_posts, name='get_liked_posts'),
     path('api/update-profile/', views.update_profile, name='update_profile'),  
     path('api/feed-posts', views.get_feed_posts, name='get_feed_posts'),
-    path('api/toggle-like', views.toggle_like, name='toggle_like'),
-    path('api/check-liked-posts', views.check_liked_posts, name='check_liked_posts'),
     path('check-auth/', views.check_auth, name='check-auth'),
+    path('api/like-post', views.like_post, name='like_post'),
 ]
 
 # Debug 모드일 때만 미디어 파일 서빙
