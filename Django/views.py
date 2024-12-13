@@ -171,12 +171,13 @@ def get_user_posts(request):
         with connection.cursor() as cursor:
             # 사용자의 게시물 조회
             cursor.execute("""
-                SELECT f.feed_id, fd.desc, 
+                SELECT f.feed_id, fd.desc, u.username, 
                        (SELECT file_name FROM MEDIA_FILE WHERE feed_id = f.feed_id LIMIT 1) as image,
                        (SELECT COUNT(*) FROM COMMENT_INFO WHERE feed_id = f.feed_id) as comments_count,
                        f.like_count
                 FROM FEED_INFO f
-                LEFT JOIN FEED_DESC fd ON f.feed_id = fd.feed_id
+                LEFT JOIN FEED_DESC fd ON f.feed_id = fd.feed
+                LEFT JOIN USER_INFO u ON f.user_id = u.user_id  -- 사용자 정보 조인
                 WHERE f.user_id = %s
                 ORDER BY f.feed_id DESC
             """, [user_id])
@@ -187,9 +188,10 @@ def get_user_posts(request):
                 'posts': [{
                     'id': post[0],
                     'description': post[1],
-                    'image_url': f'/media/{post[2]}' if post[2] else None,
-                    'comments': post[3],
-                    'likes': post[4]
+                    'author': post[2] if post[2] else 'Unknown',  # 사용자 이름이 없을 경우 처리
+                    'image_url': f'/media/{post[3]}' if post[3] else None,
+                    'comments': post[4],
+                    'likes': post[5]
                 } for post in posts]
             })
 
