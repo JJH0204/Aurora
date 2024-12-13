@@ -176,13 +176,14 @@ def get_user_posts(request):
                        (SELECT COUNT(*) FROM COMMENT_INFO WHERE feed_id = f.feed_id) as comments_count,
                        f.like_count
                 FROM FEED_INFO f
-                LEFT JOIN FEED_DESC fd ON f.feed_id = fd.feed
-                LEFT JOIN USER_INFO u ON f.user_id = u.user_id  -- 사용자 정보 조인
+                LEFT JOIN FEED_DESC fd ON f.feed_id = fd.feed_id
+                LEFT JOIN USER_INFO u ON f.user_id = u.user_id
                 WHERE f.user_id = %s
                 ORDER BY f.feed_id DESC
             """, [user_id])
             
             posts = cursor.fetchall()
+            print(f"Fetched posts: {posts}")  # 쿼리 결과 출력
             
             return JsonResponse({
                 'posts': [{
@@ -533,3 +534,56 @@ def check_auth(request):
     return JsonResponse({
         'isAuthenticated': request.user.is_authenticated
     })
+
+@csrf_exempt
+@login_required
+def like_post(request):
+    try:
+        data = json.loads(request.body)
+        feed_id = data.get('feed_id')
+        user_id = request.user.id
+
+        with connection.cursor() as cursor:
+            # 이미 좋아요를 눌렀는지 확인
+            cursor.execute("""
+                SELECT COUNT(*) 
+                FROM LIKE_INFO 
+                WHERE feed_id = %s AND user_id = %s
+            """, [feed_id, user_id])
+            
+            already_liked = cursor.fetchone()[0] > 0
+
+            if already_liked:
+                # 좋아요 취소
+                cursor.execute("""
+                    DELETE FROM LIKE_INFO 
+                    WHERE feed_id = %s AND user_id = %s
+                """, [feed_id, user_id])
+
+                # 좋아요 수 감소
+                cursor.execute("""
+                    UPDATE FEED_INFO 
+                    SET like_count = like_count - 1 
+                    WHERE feed_id = %s
+                """, [feed_id])
+
+                return JsonResponse({'status': 'unliked', 'message': '좋아요가 취소되었습니다.'})
+            else:
+                # 좋아요 추가
+                cursor.execute("""
+                    INSERT INTO LIKE_INFO (feed_id, user_id) 
+                    VALUES (%s, %s)
+                """, [feed_id, user_id])
+
+                # 좋아요 수 증가
+                cursor.execute("""
+                    UPDATE FEED_INFO 
+                    SET like_count = like_count + 1 
+                    WHERE feed_id = %s
+                """, [feed_id])
+
+                return JsonResponse({'status': 'liked', 'message': '좋아요가 추가되었습니다.'})
+
+    except Exception as e:
+        print(f"Error in like_post: {str(e)}")
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)

@@ -59,7 +59,7 @@ function createPostCard(post) {
     
     userInfoContainer.appendChild(userImage);
     userInfoContainer.appendChild(userTextInfo);
-    userInfoContainer.onclick = () => window.location.href = `/profile/${post.userId}/`;
+    userInfoContainer.onclick = () => window.location.href = `/profile/${post.author}/`;
 
     // 좋아요 버튼 영역
     const likeContainer = document.createElement('div');
@@ -281,6 +281,8 @@ function formatDate(dateString) {
     const day = String(date.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
 }
+
+
 
 document.addEventListener('DOMContentLoaded', function() {
     const feed = document.querySelector('.feed');
