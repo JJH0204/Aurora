@@ -59,7 +59,7 @@ function createPostCard(post) {
     
     userInfoContainer.appendChild(userImage);
     userInfoContainer.appendChild(userTextInfo);
-    userInfoContainer.onclick = () => window.location.href = `/profile/${post.userId}/`;
+    userInfoContainer.onclick = () => window.location.href = `/profile/${post.user_id}/`;
 
     // 좋아요 버튼 영역
     const likeContainer = document.createElement('div');
@@ -402,6 +402,19 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     });
+});
+
+// 게시물 목록을 렌더링하는 부분
+data.posts.forEach(post => {
+    const postElement = document.createElement('div');
+    postElement.innerHTML = `
+        <h3><a href="/profile/${post.user_id}/">${post.author}</a></h3>  <!-- 사용자 이름 클릭 시 프로필로 이동 -->
+        <p>${post.description}</p>
+        <img src="${post.image_url}" alt="Post Image">
+        <p>Likes: ${post.likes}</p>
+        <p>Comments: ${post.comments}</p>
+    `;
+    document.querySelector('.post-container').appendChild(postElement);
 });
 
 document.addEventListener('DOMContentLoaded', function() {
