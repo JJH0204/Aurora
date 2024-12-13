@@ -105,17 +105,7 @@
             cursor: pointer;
             opacity: 0;
             animation: fadeIn 0.8s ease-in forwards;
-            transition: transform 0.3s ease;
         }
-
-        .main-logo:hover {
-            transform: scale(1.05);
-        }
-
-        .main-logo:active {
-            transform: scale(0.95);
-            transition: transform 0.1s ease;
-        }   
 
         @keyframes fadeIn {
             from {
@@ -151,7 +141,7 @@
         }
 
         .fade-out {
-            animation: fadeOut 1.0s ease-out forwards;
+            animation: fadeOut 0.3s ease-out forwards;
         }
 
         .login-container {
@@ -160,18 +150,6 @@
 
         .login-container.show {
             animation: loginFadeIn 0.3s ease-in forwards;
-        }
-
-        @keyframes clickEffect {
-            0% {
-                transform: scale(1.05);
-            }
-            50% {
-                transform: scale(0.95);
-            }
-            100% {
-                transform: scale(1.05);
-            }
         }
     </style>
 </head>
@@ -340,7 +318,7 @@
                 initialScreen.style.display = 'none';
                 loginContainer.style.display = 'flex';
                 loginContainer.classList.add('show');
-            }, 1000);
+            }, 500);
         }
 
         document.addEventListener('DOMContentLoaded', function() {
