@@ -234,7 +234,7 @@ def get_liked_posts(request):
         user_id = request.user.id
         
         with connection.cursor() as cursor:
-            # 사용자가 좋아요한 게시물 조회
+            # 사용자가 좋���요한 게시물 조회
             cursor.execute("""
                 SELECT f.feed_id, fd.desc, u.user_name,
                        (SELECT file_name FROM MEDIA_FILE WHERE feed_id = f.feed_id LIMIT 1) as image,
@@ -304,7 +304,7 @@ def update_profile(request):
                 profile_images_dir = '/home/test/Aurora/Aurora/Data/Profile_images'
                 os.makedirs(profile_images_dir, exist_ok=True)
                 
-                # 파재 날짜 형식 설정 (YYYYMMDD)
+                # 파일 날짜 형식 설정 (YYYYMMDD)
                 current_date = datetime.now().strftime('%Y%m%d')
                 
                 # 현재 사용자의 username 가져오기
@@ -315,48 +315,52 @@ def update_profile(request):
                     """, [request.user.id])
                     username = cursor.fetchone()[0]
                 
-                # 파일 이름 설정 (profile_username_YYYYMMDD.확장자)
-                file_extension = os.path.splitext(profile_image.name)[1].lower()
-                new_filename = f"profile_{username}_{current_date}{file_extension}"
+                # 파일명 설정 (username_YYYYMMDD.확장자)
+                file_extension = os.path.splitext(profile_image.name)[1]
+                new_filename = f"{username}_{current_date}{file_extension}"
                 file_path = os.path.join(profile_images_dir, new_filename)
                 
-                # 기존 프로필 이미지 삭제
-                cursor.execute("""
-                    SELECT profile_image FROM USER_INFO 
-                    WHERE user_id = %s
-                """, [request.user.id])
-                old_image = cursor.fetchone()[0]
-                if old_image:
-                    old_image_path = os.path.join(profile_images_dir, old_image)
-                    if os.path.exists(old_image_path):
-                        os.remove(old_image_path)
-                
-                # 새 파일 저장
+                # 파일 저장
                 with open(file_path, 'wb+') as destination:
                     for chunk in profile_image.chunks():
                         destination.write(chunk)
                 
-                # 데이터베이스에 새 파일 경로 저장
+                # DB에 프로필 이미지 경로 업데이트
                 with connection.cursor() as cursor:
                     cursor.execute("""
                         UPDATE USER_INFO 
-                        SET profile_image = %s
+                        SET profile_image = %s 
                         WHERE user_id = %s
                     """, [new_filename, request.user.id])
 
-                return JsonResponse({
-                    'status': 'success',
-                    'message': '프로필 이미지가 성공적으로 업데이트되었습니다.'
-                })
+            # 프로필 정보 업데이트 (username, email, bio)
+            data = json.loads(request.body)
+            username = data.get('username')
+            email = data.get('email')
+            bio = data.get('bio')
+
+            with connection.cursor() as cursor:
+                # USER_INFO 테이블 업데이트
+                cursor.execute("""
+                    UPDATE USER_INFO 
+                    SET username = %s 
+                    WHERE user_id = %s
+                """, [username, request.user.id])
+
+                # USER_ACCESS 테이블 업데이트
+                cursor.execute("""
+                    UPDATE USER_ACCESS 
+                    SET email = %s 
+                    WHERE user_id = %s
+                """, [email, request.user.id])
+
+            return JsonResponse({'status': 'success', 'message': '프로필이 성공적으로 업데이트되었습니다.'})
 
         except Exception as e:
-            print("Error during profile image update:", str(e))
-            return JsonResponse({
-                'status': 'error',
-                'message': '프로필 이미지 업데이트 중 오류가 발생했습니다.'
-            }, status=500)
+            print(f"Error updating profile: {str(e)}")
+            return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
 
-    return JsonResponse({'message': '잘못된 요청 방식입니다.'}, status=405)
+    return JsonResponse({'status': 'error', 'message': '잘못된 요청입니다.'}, status=400)
 
 @csrf_exempt
 def get_feed_posts(request):
@@ -454,7 +458,7 @@ def toggle_like(request):
                 return JsonResponse({
                     'message': '좋아요 취소됨', 
                     'is_liked': False,
-                    'likes_count': max(0, get_likes_count(feed_id))
+                    'likes_count': get_likes_count(feed_id)
                 })
             else:
                 # 좋아요 추가
