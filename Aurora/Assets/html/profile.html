@@ -223,11 +223,37 @@
     </div>
 
     <script>
-        // 페이지 로드 시 사용자 정보 로드
+        // 페이지 로드 시 사용자 정보를 가져오는 함수
         document.addEventListener('DOMContentLoaded', function() {
-            loadUserProfile();
-            loadUserPosts();
-            loadUserFriends();
+            // 프로필 정보 가져오기
+            fetch('/api/profile')
+                .then(response => response.json())
+                .then(data => {
+                    // 사용자 이름 업데이트
+                    const usernameElements = document.querySelectorAll('.username');
+                    usernameElements.forEach(element => {
+                        element.textContent = data.username;
+                    });
+
+                    // 이메일 업데이트
+                    const emailElements = document.querySelectorAll('.email');
+                    emailElements.forEach(element => {
+                        element.textContent = data.email;
+                    });
+
+                    // 프로필 이미지 업데이트
+                    const profileImages = document.querySelectorAll('.profile-image');
+                    profileImages.forEach(img => {
+                        if (data.profile_image) {
+                            img.src = `/media/Profile_images/${data.profile_image}`;
+                        } else {
+                            img.src = '/static/img/default_profile.png';
+                        }
+                    });
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
         });
 
         function loadUserProfile() {
