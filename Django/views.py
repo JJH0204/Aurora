@@ -263,7 +263,7 @@ def get_liked_posts(request):
 
     except Exception as e:
         print(f"Error fetching liked posts: {str(e)}")
-        return JsonResponse({'message': '좋아요한 게시물을 불러오는 중 오��가 발생했습니다.'}, status=500)
+        return JsonResponse({'message': '좋아요한 게시물을 불러오는 중 오류가 발생했습니다.'}, status=500)
 
 
 @csrf_exempt
@@ -329,19 +329,20 @@ def update_profile(request):
                         WHERE user_id = %s
                     """, [relative_path, request.user.id])
 
-            # 프로필 정보 업데이트 (username, email, bio)
-            data = json.loads(request.body)
+            # JSON 데이터에서 bio 가져오기 추가
+            data = json.loads(request.body.decode('utf-8'))
             username = data.get('username')
             email = data.get('email')
-            bio = data.get('bio')
+            bio = data.get('bio', '')  # bio 데이터 추가
 
             with connection.cursor() as cursor:
-                # USER_INFO 테이블 업데이트
+                # USER_INFO 테이블 업데이트 시 bio도 함께 업데이트
                 cursor.execute("""
                     UPDATE USER_INFO 
-                    SET username = %s 
+                    SET username = %s,
+                        bio = %s  # bio 컬럼 업데이트 추가
                     WHERE user_id = %s
-                """, [username, request.user.id])
+                """, [username, bio, request.user.id])
 
                 # USER_ACCESS 테이블 업데이트
                 cursor.execute("""
@@ -350,7 +351,7 @@ def update_profile(request):
                     WHERE user_id = %s
                 """, [email, request.user.id])
 
-            return JsonResponse({'status': 'success', 'message': '프로필이 성공적으로 업데이트되었습니다.'})
+            return JsonResponse({'status': 'success'})
 
         except Exception as e:
             print(f"Error updating profile: {str(e)}")
@@ -411,6 +412,7 @@ def get_feed_posts(request):
         
         return JsonResponse({'posts': feeds}, json_dumps_params={'ensure_ascii': False})
 
+@login_required
 @csrf_exempt
 def toggle_like(request):
     if request.method != 'POST':
@@ -425,6 +427,12 @@ def toggle_like(request):
         # 유효성 검사
         if not feed_id:
             return JsonResponse({'message': 'feed_id가 필요합니다.'}, status=400)
+
+        # feed_id가 FEED_INFO에 존재하는지 확인
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT COUNT(*) FROM FEED_INFO WHERE feed_id = %s", [feed_id])
+            if cursor.fetchone()[0] == 0:
+                return JsonResponse({'message': '존재하지 않는 게시물입니다.'}, status=404)
 
         with transaction.atomic():
             # 이미 좋아요를 눌렀는지 확인
