@@ -59,7 +59,7 @@ function createPostCard(post) {
     
     userInfoContainer.appendChild(userImage);
     userInfoContainer.appendChild(userTextInfo);
-    userInfoContainer.onclick = () => window.location.href = `/profile/${post.author}/`;
+    userInfoContainer.onclick = () => window.location.href = `/profile/${post.userId}/`;
 
     // 좋아요 버튼 영역
     const likeContainer = document.createElement('div');
