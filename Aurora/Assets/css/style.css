@@ -210,7 +210,8 @@ body {
     border-radius: 15px;
     margin-bottom: 20px;
     overflow: hidden;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    box-shadow: none;
+    border: 2px solid rgba(167, 139, 250, 0.3);
 }
 
 .post-header {
@@ -310,8 +311,9 @@ body {
     min-height: 400px;
     max-height: 600px;
     margin-bottom: 15px;
-    border-radius: 20px;
+    border-radius: 15px;
     overflow: hidden;
+    border: 2px solid rgba(167, 139, 250, 0.3);
 }
 
 /* 이미지 스타일 */

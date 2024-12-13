@@ -91,14 +91,13 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            min-height: 100vh;
-            background: white;
+            min-height: calc(100vh - 200px);
         }
 
         .logo-container {
             text-align: left;
             width: 600px;
-            align-self: center;
+            align-self: flex-end;
         }
 
         .main-logo {
@@ -173,29 +172,6 @@
             100% {
                 transform: scale(1.05);
             }
-        }
-
-        body {
-            background: white;
-            transition: background 1s ease-in-out;
-        }
-
-        body.login-background {
-            background: url("{% static 'img/Aurora_background.jpg' %}") no-repeat center center fixed;
-            -webkit-background-size: cover;
-            -moz-background-size: cover;
-            -o-background-size: cover;
-            background-size: cover;
-            min-height: 100vh;
-        }
-
-        .initial-screen {
-            background: white;
-            min-height: 100vh;
-        }
-
-        .login-container {
-            background: transparent;
         }
     </style>
 </head>
@@ -364,7 +340,6 @@
                 initialScreen.style.display = 'none';
                 loginContainer.style.display = 'flex';
                 loginContainer.classList.add('show');
-                document.body.classList.add('login-background');
             }, 1000);
         }
 
