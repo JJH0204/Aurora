@@ -349,8 +349,6 @@ def get_feed_posts(request):
                 rm.file_name,
                 f.like_count,
                 f.feed_type,
-                fd.content,  # content 추가
-                fd.date  # date 추가
             FROM FEED_INFO f
             LEFT JOIN FEED_DESC fd ON f.feed_id = fd.feed_id
             LEFT JOIN USER_INFO ui ON f.user_id = ui.user_id
