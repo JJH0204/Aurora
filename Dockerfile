@@ -15,7 +15,52 @@ RUN apt-get update && apt-get install -y \
     mariadb-server \
     mariadb-client \
     imagemagick \
+    nginx \
+    wget \
+    git \
+    bison \
+    flex \
+    libgeoip-dev \
+    liblmdb-dev \
+    libpcre3-dev \
+    libyajl-dev \
+    automake \
+    autoconf \
+    libtool \
+    libcurl4-openssl-dev \
+    libxml2-dev \
+    libssl-dev \
+    zlib1g-dev \
     && rm -rf /var/lib/apt/lists/*
+
+# Nginx 및 ModSecurity 디렉토리 설정
+RUN mkdir -p /etc/nginx/modules /etc/nginx/modsecurity
+
+# ModSecurity 소스 빌드
+RUN cd /opt && \
+    git clone --depth 1 -b v3/master --single-branch https://github.com/SpiderLabs/ModSecurity && \
+    cd ModSecurity && \
+    git submodule init && \
+    git submodule update && \
+    ./build.sh && \
+    ./configure && \
+    make && \
+    make install && \
+    cp modsecurity.conf-recommended /etc/nginx/modsecurity/modsecurity.conf && \
+    sed -i 's/SecRuleEngine DetectionOnly/SecRuleEngine On/' /etc/nginx/modsecurity/modsecurity.conf
+
+# Nginx 커넥터 설치
+RUN cd /opt && \
+    git clone --depth 1 https://github.com/SpiderLabs/ModSecurity-nginx.git && \
+    wget http://nginx.org/download/nginx-1.24.0.tar.gz && \
+    tar zxvf nginx-1.24.0.tar.gz && \
+    cd nginx-1.24.0 && \
+    ./configure --with-compat --add-dynamic-module=/opt/ModSecurity-nginx && \
+    make modules && \
+    cp objs/ngx_http_modsecurity_module.so /etc/nginx/modules/
+
+COPY nginx-modsecurity/nginx.conf /etc/nginx/nginx.conf
+COPY nginx-modsecurity/modsecurity.conf /etc/nginx/modsecurity/modsecurity.conf
 
 # MariaDB 데이터 디렉토리 설정
 RUN mkdir -p /var/run/mysqld && \

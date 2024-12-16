@@ -57,5 +57,14 @@ echo "Collecting static files..."
 cd /app
 python3 manage.py collectstatic --noinput
 
+# Start Django in background
 echo "Starting Django development server..."
-exec python3 manage.py runserver 0.0.0.0:80
+python3 manage.py runserver 0.0.0.0:8000 &
+
+# Wait for Django to start
+echo "Waiting for Django to start..."
+sleep 5
+
+# Start Nginx in foreground
+echo "Starting Nginx..."
+nginx -g 'daemon off;'

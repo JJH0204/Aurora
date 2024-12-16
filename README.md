@@ -85,6 +85,13 @@ $ docker run -d --name aurora -p 80:80 -v "%cd%/Aurora:/app/Aurora" krjaeh0/auro
 - 관리자 페이지: http://localhost/admin
 - 
 
+4. WAF 테스트
+```bash
+docker exec aurora tail -f /var/log/modsec_audit.log
+# 명령어를 실행한 후 받은 정보를 확인
+# http://localhost/?id=1' OR '1'='1
+# http://localhost/?test=<script>alert('xss')</script>
+```
 ## license
 이 프로젝트는 MIT 라이선스 하에 배포됩니다.  
 자세한 내용은 [LICENSE](LICENSE) 파일을 참조하세요.
