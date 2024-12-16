@@ -299,7 +299,7 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .then(data => {
             // 서버에서 받은 데이터로 포스트 매핑
-            let posts = data.posts.map(post => ({
+            const posts = data.posts.map(post => ({
                 id: post.id,
                 media_files: post.media_files || [],
                 content: post.content,
@@ -311,10 +311,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 desc: post.desc,
             }));
 
-            // 포스트 배열을 랜덤하게 섞기
-            posts = posts.sort(() => Math.random() - 0.5);
-
-            // 섞인 포스트 배열로 피드 생성
+            // 기존 createPostCard 함수 사용하여 포스트 카드 생성
             posts.forEach(post => {
                 const postCard = createPostCard(post);
                 feed.appendChild(postCard);
