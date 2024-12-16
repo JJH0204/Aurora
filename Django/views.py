@@ -344,8 +344,8 @@ def get_feed_posts(request):
                 f.feed_id, 
                 fd.`desc`, 
                 ui.username,
-                ui.user_id,  -- user_id 
-                ui.profile_image,   -- profile_image  
+                ui.user_id,  
+                COALESCE(ui.profile_image, '') as profile_image,  
                 rm.file_name,
                 f.like_count,
                 f.feed_type
@@ -378,6 +378,7 @@ def get_feed_posts(request):
             """, [feed['feed_id']])
             media_files = cursor.fetchall()
             feed['media_files'] = [{'file_name': file[0], 'extension_type': file[1]} for file in media_files]
+            feed['profile_image'] = f"/media/{feed['profile_image']}" if feed['profile_image'] else '/static/img/default_profile.png'
         
         return JsonResponse({'posts': feeds}, json_dumps_params={'ensure_ascii': False})
 

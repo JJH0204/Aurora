@@ -36,6 +36,7 @@ function createPostCard(post) {
     card.className = 'post-card';
     card.dataset.userId = post.user_id;  // user_id를 data-user-id 속성으로 추가
 
+    
     // 헤더 영역 생성 (사용자 정보 + 좋아요)
     const headerDiv = document.createElement('div');
     headerDiv.className = 'post-header';
@@ -44,8 +45,9 @@ function createPostCard(post) {
     const userInfoContainer = document.createElement('div');
     userInfoContainer.className = 'user-info-container';
     
+    // 프로필 이미지 로딩 수정
     const userImage = document.createElement('img');
-    if (post.profile_image) {
+    if (post.profile_image && post.profile_image.trim() !== "") {
         userImage.src = `/media/${post.profile_image}`;
     } else {
         userImage.src = '/static/img/default_profile.png';
@@ -66,7 +68,7 @@ function createPostCard(post) {
     userInfoContainer.appendChild(userImage);
     userInfoContainer.appendChild(userTextInfo);
     userInfoContainer.onclick = () => {
-        const userId = post.user_id;  // user_id를 가져옴
+        const userId = card.dataset.userId;  // data-user-id에서 userId 가져오기
         console.log("User ID:", userId);  // userId가 올바르게 설정되었는지 확인
         if (userId) {
             window.location.href = `/profile/${userId}/`;  // userId 사용
@@ -74,6 +76,7 @@ function createPostCard(post) {
             console.error("User ID is undefined");  // userId가 undefined일 경우 에러 로그
         }
     };
+
     // 좋아요 버튼 영역
     const likeContainer = document.createElement('div');
     likeContainer.className = 'like-container';
@@ -237,7 +240,6 @@ function createPostCard(post) {
     footerDiv.appendChild(dateDiv);
     card.appendChild(footerDiv);
 
-    
     return card;
 }
 // 날짜 포맷팅 함수 추가
