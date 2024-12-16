@@ -31,9 +31,10 @@ function getTimeAgo(dateString) {
 
 // 포스트 카드 생성 함수
 function createPostCard(post) {
+    console.log("Post object:", post);  // post 객체의 내용을 확인
     const card = document.createElement('div');
     card.className = 'post-card';
-    card.dataset.user_id = post.user_id;
+    card.dataset.userId = post.user_id;  // user_id를 data-user-id 속성으로 추가
 
     // 헤더 영역 생성 (사용자 정보 + 좋아요)
     const headerDiv = document.createElement('div');
@@ -45,8 +46,7 @@ function createPostCard(post) {
     
     const userImage = document.createElement('img');
     if (post.profile_image) {
-         // 전체 경로에서 'Aurora/Data/media/' 이후의 경로만 사용하도록 수정
-        userImage.src = `/media/Profile_images/${post.profile_image.split('/').pop()}`; 
+        userImage.src = `/media/${post.profile_image}`;
     } else {
         userImage.src = '/static/img/default_profile.png';
     }
@@ -65,8 +65,15 @@ function createPostCard(post) {
     
     userInfoContainer.appendChild(userImage);
     userInfoContainer.appendChild(userTextInfo);
- 
-
+    userInfoContainer.onclick = () => {
+        const userId = post.user_id;  // user_id를 가져옴
+        console.log("User ID:", userId);  // userId가 올바르게 설정되었는지 확인
+        if (userId) {
+            window.location.href = `/profile/${userId}/`;  // userId 사용
+        } else {
+            console.error("User ID is undefined");  // userId가 undefined일 경우 에러 로그
+        }
+    };
     // 좋아요 버튼 영역
     const likeContainer = document.createElement('div');
     likeContainer.className = 'like-container';

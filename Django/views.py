@@ -12,6 +12,7 @@ import traceback  # 상세한 오류 추적을 위해 추가
 from django.views.decorators.http import require_http_methods
 from datetime import datetime
 from django.db import transaction
+from django.shortcuts import render
 
 
 @csrf_exempt
@@ -332,33 +333,26 @@ def update_profile(request):
 def get_feed_posts(request):
     with connection.cursor() as cursor:
         cursor.execute("""
-            WITH RankedMedia AS (
-                SELECT 
-                    mf.feed_id,
-                    mf.file_name,
-                    mf.extension_type,
-                    ROW_NUMBER() OVER (PARTITION BY mf.feed_id ORDER BY mf.media_number) as rn
-                FROM MEDIA_FILE mf
-            )
-      SELECT 
-        f.feed_id, 
-        fd.`desc`, 
-        ui.username,
-        ui.user_id,  # user_id 추가
-        rm.file_name,
-        f.like_count,
-        f.feed_type,
-        ui.profile_image  # 프로필 이미지 필드 추가
-    FROM FEED_INFO f
-    LEFT JOIN FEED_DESC fd ON f.feed_id = fd.feed_id
-    LEFT JOIN USER_INFO ui ON f.user_id = ui.user_id
-    LEFT JOIN RankedMedia rm ON f.feed_id = rm.feed_id AND rm.rn = 1
-    ORDER BY f.feed_id DESC
+            SELECT 
+                f.feed_id, 
+                fd.`desc`, 
+                ui.username,
+                ui.user_id,  # user_id 추가
+                rm.file_name,
+                f.like_count,
+                f.feed_type,
+                ui.profile_image  # 프로필 이미지 필드 추가
+            FROM FEED_INFO f
+            LEFT JOIN FEED_DESC fd ON f.feed_id = fd.feed_id
+            LEFT JOIN USER_INFO ui ON f.user_id = ui.user_id
+            LEFT JOIN RankedMedia rm ON f.feed_id = rm.feed_id AND rm.rn = 1
+            ORDER BY f.feed_id DESC
         """)
         
         columns = [col[0] for col in cursor.description]
         feeds = [dict(zip(columns, row)) for row in cursor.fetchall()]
         
+        print("Feeds data:", feeds)  # feeds 배열의 내용을 확인
         # 로그인한 사용자의 좋아요 상태 확인
         like_post = set()
         if request.user.is_authenticated:
@@ -430,4 +424,22 @@ def like_post(request):
     except Exception as e:
         print(f"Error during liking post: {str(e)}")
         return JsonResponse({'message': '좋아요 처리 중 오류가 발생했습니다.'}, status=500)
+
+def index(request):
+    if request.user.is_authenticated:
+        with connection.cursor() as cursor:
+            # 실제로 데이터가 가져와지는지 디버깅
+            cursor.execute("""
+                SELECT profile_image 
+                FROM USER_INFO 
+                WHERE user_id = %s
+            """, [request.user.id])
+            result = cursor.fetchone()
+            print("DB에서 가져온 프로필 이미지:", result)  # 디버깅용
+            
+            context = {
+                'user_profile_image': result[0] if result else None
+            }
+            return render(request, 'index.html', context)
+    return render(request, 'index.html')
 
