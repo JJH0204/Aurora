@@ -14,7 +14,6 @@ urlpatterns = [
     path('post/', login_required(TemplateView.as_view(template_name='post.html')), name='post'),
     path('profile/', login_required(TemplateView.as_view(template_name='profile.html')), name='profile'),
     path('profile/<int:user_id>/', login_required(TemplateView.as_view(template_name='profile.html')), name='user_profile'),
-    path('profile/<str:username>/', login_required(TemplateView.as_view(template_name='profile.html')), name='user_profile'),
     path('profile/edit/', login_required(TemplateView.as_view(template_name='profileEdit.html')), name='profile_edit'),
     path('api/signup', views.signup, name='signup'),
     path('api/login', views.login, name='login'),
