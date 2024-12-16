@@ -12,7 +12,6 @@ import traceback  # 상세한 오류 추적을 위해 추가
 from django.views.decorators.http import require_http_methods
 from datetime import datetime
 from django.db import transaction
-from django.shortcuts import render
 
 
 @csrf_exempt
@@ -424,22 +423,4 @@ def like_post(request):
     except Exception as e:
         print(f"Error during liking post: {str(e)}")
         return JsonResponse({'message': '좋아요 처리 중 오류가 발생했습니다.'}, status=500)
-
-def index(request):
-    if request.user.is_authenticated:
-        with connection.cursor() as cursor:
-            # 실제로 데이터가 가져와지는지 디버깅
-            cursor.execute("""
-                SELECT profile_image 
-                FROM USER_INFO 
-                WHERE user_id = %s
-            """, [request.user.id])
-            result = cursor.fetchone()
-            print("DB에서 가져온 프로필 이미지:", result)  # 디버깅용
-            
-            context = {
-                'user_profile_image': result[0] if result else None
-            }
-            return render(request, 'index.html', context)
-    return render(request, 'index.html')
 
