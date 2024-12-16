@@ -100,9 +100,9 @@
                 // 사용자 정보가 있는 가장 가까운 부모 요소 찾기
                 const postElement = this.closest('.post-card');
                 if (postElement) {
-                    const username = postElement.querySelector('.username').textContent.replace('@', '');
+                    const userId = postElement.dataset.userId; 
                     // 프로필 페이지로 이동 (username 기반)
-                    window.location.href = `/profile/${username}/`;
+                    window.location.href = `/profile/${userId}/`;
                 }
             });
         });

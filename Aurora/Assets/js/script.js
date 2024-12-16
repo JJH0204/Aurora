@@ -45,7 +45,8 @@ function createPostCard(post) {
     
     const userImage = document.createElement('img');
     if (post.profile_image) {
-        userImage.src = `/media/${post.profile_image}`;
+         // 전체 경로에서 'Aurora/Data/media/' 이후의 경로만 사용하도록 수정
+        userImage.src = `/media/Profile_images/${post.profile_image.split('/').pop()}`; 
     } else {
         userImage.src = '/static/img/default_profile.png';
     }
