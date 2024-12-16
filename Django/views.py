@@ -345,6 +345,7 @@ def get_feed_posts(request):
                 fd.`desc`, 
                 ui.username,
                 ui.user_id,  # user_id 추가
+                ui.profile_image,   # profile_image 필드 추가
                 rm.file_name,
                 f.like_count,
                 f.feed_type,
