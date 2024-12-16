@@ -344,16 +344,16 @@ def get_feed_posts(request):
                 f.feed_id, 
                 fd.`desc`, 
                 ui.username,
-                ui.user_id,  # user_id 추가
-                ui.profile_image,   # profile_image 필드 추가
+                ui.user_id,  -- user_id 
+                ui.profile_image,   -- profile_image  
                 rm.file_name,
                 f.like_count,
-                f.feed_type,
+                f.feed_type
             FROM FEED_INFO f
             LEFT JOIN FEED_DESC fd ON f.feed_id = fd.feed_id
             LEFT JOIN USER_INFO ui ON f.user_id = ui.user_id
             LEFT JOIN RankedMedia rm ON f.feed_id = rm.feed_id AND rm.rn = 1
-            ORDER BY f.feed_id DESC
+            ORDER BY f.feed_id DESC;
         """)
         
         columns = [col[0] for col in cursor.description]
