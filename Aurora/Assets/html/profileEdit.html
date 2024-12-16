@@ -117,32 +117,41 @@
                 });
             }
         }
+            // 모든 프로필 이미지 업데이트 함수 추가
 
         document.addEventListener('DOMContentLoaded', function() {
-            // 프로필 정보 가져오기
+            // 프이지 로드 시 사용자 프로필 정보를 가져와서 폼에 채우기
             fetch('/api/profile')
                 .then(response => response.json())
                 .then(data => {
-                    if (data.status === 'success') {
-                        document.getElementById('username').value = data.data.username;
-                        document.getElementById('email').value = data.data.email;
-                        document.getElementById('bio').value = data.data.bio;
+                    // DB에서 가져온 사용자 정보를 폼 필드에 설정
+                    document.getElementById('username').value = data.username || '';
+                    document.getElementById('email').value = data.email || '';
+                    document.getElementById('bio').value = data.bio || '';
+
+                    // 프로필 이미지가 있는 경우 이미지 미리보기 업데이트
+                    if (data.profile_image) {
+                        document.getElementById('profile-preview').src = data.profile_image;
                     }
                 })
-                .catch(error => console.error('Error:', error));
+                .catch(error => {
+                    console.error('프로필 정보 로딩 중 오류:', error);
+                });
 
-            // Save Changes 버튼 이벤트
+            // Save Changes 버튼 이벤트 리스너는 그대로 유지
             const saveButton = document.querySelector('.btn-primary');
             if (saveButton) {
                 saveButton.addEventListener('click', function(e) {
                     e.preventDefault();
                     
+                    // 수정된 폼 데이터 수집
                     const formData = {
                         username: document.getElementById('username').value.trim(),
                         email: document.getElementById('email').value.trim(),
                         bio: document.getElementById('bio').value.trim()
                     };
 
+                    // 프로필 업데이트 API 호출
                     fetch('/api/update-profile/', {
                         method: 'POST',
                         headers: {

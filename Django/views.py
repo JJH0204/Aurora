@@ -238,6 +238,7 @@ def get_user_friends(request):
 def get_profile(request, user_id=None):
     try:
         with connection.cursor() as cursor:
+            # 현재 로그인한 사용자의 프로필 정보를 가져오는 쿼리
             cursor.execute("""
                 SELECT ui.username, ua.email, ui.profile_image, ui.bio
                 FROM USER_INFO ui
@@ -249,11 +250,12 @@ def get_profile(request, user_id=None):
             if not user_data:
                 return JsonResponse({'error': '사용자를 찾을 수 없습니다.'}, status=404)
             
+            # 프로필 정보를 JSON 형식으로 반환
             return JsonResponse({
                 'username': user_data[0],
                 'email': user_data[1],
                 'profile_image': f'/media/{user_data[2]}' if user_data[2] else None,
-                'bio': user_data[3] or ''  # bio 정보 추가
+                'bio': user_data[3] or ''  # bio가 None인 경우 빈 문자열 반환
             })
     except Exception as e:
         print(f"Error getting profile: {str(e)}")
