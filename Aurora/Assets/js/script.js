@@ -64,7 +64,7 @@ function createPostCard(post) {
     
     userInfoContainer.appendChild(userImage);
     userInfoContainer.appendChild(userTextInfo);
-    userInfoContainer.onclick = () => window.location.href = `/profile/${post.user_id}/`;
+    userInfoContainer.onclick = () => window.location.href = `/profile/${post.userId}/`;
 
     // 좋아요 버튼 영역
     const likeContainer = document.createElement('div');
@@ -232,7 +232,6 @@ function createPostCard(post) {
     
     return card;
 }
-
 // 날짜 포맷팅 함수 추가
 function formatDate(dateString) {
     const date = new Date(dateString);
@@ -430,9 +429,10 @@ document.querySelectorAll('.profile-image, .username').forEach(element => {
         // 사용자 정보가 있는 가장 가까운 부모 요소 찾기
         const postElement = this.closest('.post-card');
         if (postElement) {
-            const user_id = postElement.dataset.user_id;  // 사용자 ID를 데이터 속성에서 가져옴
+            const userId = postElement.dataset.userId;  // 사용자 ID를 데이터 속성에서 가져옴
             // 프로필 페이지로 이동 (userId 기반)
-            window.location.href = `/profile/${user_id}/`;
+            window.location.href = `/profile/${userId}/`;
         }
     });
 });
+
