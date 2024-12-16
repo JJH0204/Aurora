@@ -43,7 +43,11 @@ function createPostCard(post) {
     userInfoContainer.className = 'user-info-container';
     
     const userImage = document.createElement('img');
-    userImage.src = getImageUrl(post.userImage, true);
+    if (post.profile_image) {
+        userImage.src = `/media/${post.profile_image}`;
+    } else {
+        userImage.src = '/static/img/default_profile.png';
+    }
     userImage.alt = 'User';
     userImage.className = 'user-image';
     
@@ -59,7 +63,7 @@ function createPostCard(post) {
     
     userInfoContainer.appendChild(userImage);
     userInfoContainer.appendChild(userTextInfo);
-    userInfoContainer.onclick = () => window.location.href = `/profile/${post.user_id}/`;
+    userInfoContainer.onclick = () => window.location.href = `/profile/${post.username}/`;
 
     // 좋아요 버튼 영역
     const likeContainer = document.createElement('div');
