@@ -65,7 +65,7 @@ function createPostCard(post) {
     
     userInfoContainer.appendChild(userImage);
     userInfoContainer.appendChild(userTextInfo);
-    userInfoContainer.onclick = () => window.location.href = `/profile/${post.user_id}/`;
+ 
 
     // 좋아요 버튼 영역
     const likeContainer = document.createElement('div');
@@ -277,7 +277,6 @@ function toggleLike(element, feedId) {
                         isLiked: likedPostIds.includes(post.id),
                     }));
 
-                    // 기존 createPostCard 함수 사용하여 포스트 카드 생성
                     posts.forEach(post => {
                         const postCard = createPostCard(post);
                         feed.appendChild(postCard);
