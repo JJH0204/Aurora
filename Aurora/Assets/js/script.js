@@ -33,7 +33,7 @@ function getTimeAgo(dateString) {
 function createPostCard(post) {
     const card = document.createElement('div');
     card.className = 'post-card';
-    card.dataset.userId = post.userId;
+    card.dataset.user_id = post.user_id;
 
     // 헤더 영역 생성 (사용자 정보 + 좋아요)
     const headerDiv = document.createElement('div');
@@ -65,7 +65,7 @@ function createPostCard(post) {
     
     userInfoContainer.appendChild(userImage);
     userInfoContainer.appendChild(userTextInfo);
-    userInfoContainer.onclick = () => window.location.href = `/profile/${post.userId}/`;
+    userInfoContainer.onclick = () => window.location.href = `/profile/${post.user_id}/`;
 
     // 좋아요 버튼 영역
     const likeContainer = document.createElement('div');
@@ -271,7 +271,7 @@ function toggleLike(element, feedId) {
                         content: post.content,
                         userImage: post.userImage || 'default_profile.png',
                         username: post.username,
-                        userId: post.userId,
+                        user_id: post.user_id,
                         date: post.date ? formatDate(post.date) : '날짜 없음',
                         likes: post.likes || 0,
                         isLiked: likedPostIds.includes(post.id),
@@ -430,9 +430,9 @@ document.querySelectorAll('.profile-image, .username').forEach(element => {
         // 사용자 정보가 있는 가장 가까운 부모 요소 찾기
         const postElement = this.closest('.post-card');
         if (postElement) {
-            const userId = postElement.dataset.userId;  // 사용자 ID를 데이터 속성에서 가져옴
+            const user_id = postElement.dataset.user_id;  // 사용자 ID를 데이터 속성에서 가져옴
             // 프로필 페이지로 이동 (userId 기반)
-            window.location.href = `/profile/${userId}/`;
+            window.location.href = `/profile/${user_id}/`;
         }
     });
 });

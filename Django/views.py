@@ -340,21 +340,20 @@ def get_feed_posts(request):
                     ROW_NUMBER() OVER (PARTITION BY mf.feed_id ORDER BY mf.media_number) as rn
                 FROM MEDIA_FILE mf
             )
-            SELECT 
-                f.feed_id, 
-                fd.`desc`, 
-                ui.username,
-                rm.file_name,
-                f.like_count,
-                f.feed_type,
-                ui.user_id,
-                rm.extension_type,
-                ui.profile_image  # 프로필 이미지 필드 추가
-            FROM FEED_INFO f
-            LEFT JOIN FEED_DESC fd ON f.feed_id = fd.feed_id
-            LEFT JOIN USER_INFO ui ON f.user_id = ui.user_id
-            LEFT JOIN RankedMedia rm ON f.feed_id = rm.feed_id AND rm.rn = 1
-            ORDER BY f.feed_id DESC
+      SELECT 
+        f.feed_id, 
+        fd.`desc`, 
+        ui.username,
+        ui.user_id,  # user_id 추가
+        rm.file_name,
+        f.like_count,
+        f.feed_type,
+        ui.profile_image  # 프로필 이미지 필드 추가
+    FROM FEED_INFO f
+    LEFT JOIN FEED_DESC fd ON f.feed_id = fd.feed_id
+    LEFT JOIN USER_INFO ui ON f.user_id = ui.user_id
+    LEFT JOIN RankedMedia rm ON f.feed_id = rm.feed_id AND rm.rn = 1
+    ORDER BY f.feed_id DESC
         """)
         
         columns = [col[0] for col in cursor.description]
