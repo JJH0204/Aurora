@@ -33,6 +33,7 @@ function getTimeAgo(dateString) {
 function createPostCard(post) {
     const card = document.createElement('div');
     card.className = 'post-card';
+    card.dataset.userId = post.userId;
 
     // 헤더 영역 생성 (사용자 정보 + 좋아요)
     const headerDiv = document.createElement('div');
@@ -418,4 +419,20 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
     }
+});
+
+// 프로필 이미지 클릭 이벤트 핸들러 수정
+document.querySelectorAll('.profile-image, .username').forEach(element => {
+    element.style.cursor = 'pointer';  // 마우스 커서를 포인터로 변경
+    element.addEventListener('click', function(e) {
+        e.stopPropagation();  // 이벤트 버블링 방지
+        
+        // 사용자 정보가 있는 가장 가까운 부모 요소 찾기
+        const postElement = this.closest('.post-card');
+        if (postElement) {
+            const user_id = postElement.dataset.user_id;  // 사용자 ID를 데이터 속성에서 가져옴
+            // 프로필 페이지로 이동 (userId 기반)
+            window.location.href = `/profile/${user_id}/`;
+        }
+    });
 });
