@@ -17,6 +17,11 @@
                 <img src="{% static 'img/search.png' %}" alt="Search">
             </div>
             {% if user.is_authenticated %}
+                {% if user_profile_image %}
+                    <img src="/media/Profile_images/{{ user_profile_image|split:'/'|last }}" alt="User" class="user-image">
+                {% else %}
+                    <img src="{% static 'img/default_profile.png' %}" alt="User" class="user-image">
+                {% endif %}
                 <button class="login-btn" onclick="confirmLogout()">Logout</button>
             {% else %}
                 <button class="login-btn" onclick="window.location.href='/login/'">Login</button>
