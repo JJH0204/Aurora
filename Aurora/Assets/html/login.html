@@ -304,24 +304,24 @@
             const email = document.getElementById('loginEmail').value;
             const password = document.getElementById('loginPassword').value;
 
-            const query = `SELECT * FROM USER_ACCESS WHERE email = '${email}' AND password = '${password}'`;
-
             fetch('/api/login', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    query: query,
-                    direct_query: true
+                    email: email,
+                    password: password
                 })
             })
             .then(response => response.json())
             .then(data => {
-                if (data.message === '로그인 성공') {
-                    window.location.href = '/';
-                } else {
-                    alert(data.message);
+                if (data.message) {
+                    if (data.message === '로그인 성공') {
+                        window.location.href = '/';
+                    } else {
+                        alert(data.message);
+                    }
                 }
             })
             .catch(error => {

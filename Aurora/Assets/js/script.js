@@ -82,10 +82,10 @@ function createPostCard(post) {
     userInfoContainer.appendChild(userImage);
     userInfoContainer.appendChild(userTextInfo);
     userInfoContainer.onclick = () => {
-        const userId = card.dataset.userId;  // data-user-id에서 userId 가져오기
-        console.log("User ID:", userId);  // userId가 올바르게 설정되었는지 확인
-        if (userId) {
-            window.location.href = `/profile/${userId}/`;  // userId 사용
+        const user_id = card.dataset.user_id;  // data-user-id에서 userId 가져오기
+        console.log("User ID:", user_id);  // userId가 올바르게 설정되었는지 확인
+        if (user_id) {
+            window.location.href = `/profile/${user_id}/`;  // userId 사용
         } else {
             console.error("User ID is undefined");  // userId가 undefined일 경우 에러 로그
         }
@@ -106,8 +106,8 @@ function createPostCard(post) {
     likeCount.textContent = post.likes || 0;
     // 좋아요 버튼 클릭 이벤트 추가
     likeIcon.addEventListener('click', function() {
-        const postId = this.dataset.postId; // 클릭한 포스트의 ID 가져오기
-        toggleLike(this, postId); // toggleLike 함수 호출
+        const feedId = this.dataset.feedId; // 클릭한 포스트의 ID 가져오기
+        toggleLike(this, feedId); // toggleLike 함수 호출
     });
     
     likeContainer.appendChild(likeIcon);
@@ -304,7 +304,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             id: post.id,
                             media_files: post.media_files || [],
                             content: post.content,
-                            profile_image: post.profile_image || 'default_profile.png',
+                            userImage: post.userImage || 'default_profile.png',
                             username: post.username,
                             user_id: post.user_id,
                             date: post.date ? formatDate(post.date) : '날짜 없음',
@@ -340,7 +340,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 id: post.id,
                 media_files: post.media_files || [],
                 content: post.content,
-                profile_image: post.profile_image || 'default_profile.png',
+                userImage: post.userImage || 'default_profile.png',
                 username: post.username,
                 date: post.date,
                 like_count: post.like_count || 0,

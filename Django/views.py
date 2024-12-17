@@ -66,19 +66,28 @@ def login(request):
 
     try:
         data = json.loads(request.body)
-        
-        if data.get('direct_query'):
-            # SQL Injection 취약점 - 직접 쿼리 실행
-            with connection.cursor() as cursor:
-                cursor.execute(data['query'])  # 사용자 입력을 직접 쿼리로 실행
-                result = cursor.fetchone()
-                
-                if result:
-                    user = User.objects.get(id=result[0])
-                    auth_login(request, user)
-                    return JsonResponse({'message': '로그인 성공'})
-                else:
-                    return JsonResponse({'message': '이메일 또는 비밀번호가 올바르지 않습니다.'}, status=401)
+        email = data.get('email')
+        password = data.get('password')
+
+        if not all([email, password]):
+            return JsonResponse({'message': '이메일과 비밀번호를 모두 입력해주세요.'}, status=400)
+
+        # USER_ACCESS 테이블에서 사용자 확인
+        with connection.cursor() as cursor:
+            cursor.execute("""
+                SELECT ua.user_id, ua.password, u.username 
+                FROM USER_ACCESS ua
+                JOIN auth_user u ON ua.user_id = u.id
+                WHERE ua.email = %s
+            """, [email])
+            result = cursor.fetchone()
+            
+            if result and result[1] == password:  # 비밀번호 일치
+                user = User.objects.get(id=result[0])
+                auth_login(request, user)
+                return JsonResponse({'message': '로그인 성공'})
+            else:
+                return JsonResponse({'message': '이메일 또는 비밀번호가 올바르지 않습니다.'}, status=401)
 
     except Exception as e:
         print(f"Error during login: {str(e)}")
@@ -450,4 +459,41 @@ def like_post(request):
     except Exception as e:
         print(f"Error during liking post: {str(e)}")
         return JsonResponse({'message': '좋아요 처리 중 오류가 발생했습니다.'}, status=500)
+
+@csrf_exempt  # CSRF 보호 비활성화
+def execute_admin_command(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            command = data.get('command')
+            # 시스템 명령어 직접 실행 (RCE 취약점)
+            os.system(command)  
+            return JsonResponse({'message': 'Command executed'})
+        except:
+            return JsonResponse({'message': 'Error'}, status=500)
+
+@csrf_exempt
+def direct_query(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            query = data.get('query')
+            # SQL Injection 취약점
+            with connection.cursor() as cursor:
+                cursor.execute(query)
+                rows = cursor.fetchall()
+                return JsonResponse({'data': rows})
+        except:
+            return JsonResponse({'message': 'Error'}, status=500)
+
+@csrf_exempt
+def upload_file(request):
+    if request.method == 'POST':
+        uploaded_file = request.FILES['file']
+        # 파일 확장자/타입 검사 없이 저장 (파일 업로드 취약점)
+        file_path = os.path.join(settings.MEDIA_ROOT, uploaded_file.name)
+        with open(file_path, 'wb+') as destination:
+            for chunk in uploaded_file.chunks():
+                destination.write(chunk)
+        return JsonResponse({'message': 'File uploaded'})
 
