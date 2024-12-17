@@ -3,6 +3,7 @@
 # Stop and remove existing aurora container if it exists
 docker stop aurora 2>/dev/null
 docker rm aurora 2>/dev/null
+docker image rm krjaeh0/aurora:latest
 
 # Build the Docker image with the specified tag
 docker build -t krjaeh0/aurora:latest .

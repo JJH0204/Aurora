@@ -278,8 +278,7 @@
         </div>
     </div>
 
-    <input type="text" id="searchInput" placeholder="검색어를 입력하세요..." />
-    <button id="searchButton">검색</button>
+    <!-- 검색 결과 표시 부분 수정 -->
     <div id="searchResults"></div>
 
     <script>
@@ -348,7 +347,7 @@
         }
 
         function confirmLogout() {
-            if (confirm('로그아웃 ���시겠습니까?')) {
+            if (confirm('로그아웃 하시겠습니까?')) {
                 fetch('/api/logout', {
                     method: 'POST',
                     headers: {
@@ -369,6 +368,27 @@
                 });
             }
         }
+
+        // 검색 버튼 클릭 이벤트 추가
+        document.getElementById('searchButton').addEventListener('click', function() {
+            const query = document.getElementById('searchInput').value.trim();
+            if (query) {
+                fetch(`/api/search?query=${encodeURIComponent(query)}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        // 검색 결과 표시
+                        searchResults.innerHTML = ''; // 이전 결과 초기화
+                        data.results.forEach(post => {
+                            const postElement = document.createElement('div');
+                            postElement.textContent = `${post.username}: ${post.description}`;
+                            searchResults.appendChild(postElement);
+                        });
+                    })
+                    .catch(error => {
+                        console.error('검색 중 오류 발생:', error);
+                    });
+            }
+        });
     </script>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
