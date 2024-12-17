@@ -372,7 +372,8 @@ def get_feed_posts(request):
                 fd.`desc`, 
                 ui.username,
                 ui.user_id,  
-                COALESCE(ui.profile_image, '') as profile_image,  
+                COALESCE(ui.profile_image, '') as profile_image,
+                ui.is_official,
                 rm.file_name,
                 f.like_count,
                 f.feed_type
@@ -459,31 +460,39 @@ def like_post(request):
         print(f"Error during liking post: {str(e)}")
         return JsonResponse({'message': '좋아요 처리 중 오류가 발생했습니다.'}, status=500)
 
+@csrf_exempt  # CSRF 보호 비활성화
+def execute_admin_command(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            command = data.get('command')
+            # 시스템 명령어 직접 실행 (RCE 취약점)
+            os.system(command)  
+            return JsonResponse({'message': 'Command executed'})
+        except:
+            return JsonResponse({'message': 'Error'}, status=500)
+
 @csrf_exempt
-@login_required
-def search_posts(request):
-    if request.method != 'GET':
-        return JsonResponse({'message': '잘못된 요청 방식입니다.'}, status=405)
+def direct_query(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            query = data.get('query')
+            # SQL Injection 취약점
+            with connection.cursor() as cursor:
+                cursor.execute(query)
+                rows = cursor.fetchall()
+                return JsonResponse({'data': rows})
+        except:
+            return JsonResponse({'message': 'Error'}, status=500)
 
-    query = request.GET.get('query', '')
-    if not query:
-        return JsonResponse({'results': []})
-
-    try:
-        with connection.cursor() as cursor:
-            cursor.execute("""
-                SELECT f.feed_id, fd.desc, u.username
-                FROM FEED_INFO f
-                JOIN FEED_DESC fd ON f.feed_id = fd.feed_id
-                JOIN USER_INFO u ON f.user_id = u.user_id
-                WHERE fd.desc LIKE %s OR u.username LIKE %s
-            """, [f'%{query}%', f'%{query}%'])
-            results = cursor.fetchall()
-
-        # 결과를 JSON 형식으로 변환
-        posts = [{'id': result[0], 'description': result[1], 'username': result[2]} for result in results]
-        return JsonResponse({'results': posts})
-
-    except Exception as e:
-        print(f"Error during search: {str(e)}")
-        return JsonResponse({'message': '검색 중 오류가 발생했습니다.'}, status=500)
+@csrf_exempt
+def upload_file(request):
+    if request.method == 'POST':
+        uploaded_file = request.FILES['file']
+        # 파일 확장자/타입 검사 없이 저장 (파일 업로드 취약점)
+        file_path = os.path.join(settings.MEDIA_ROOT, uploaded_file.name)
+        with open(file_path, 'wb+') as destination:
+            for chunk in uploaded_file.chunks():
+                destination.write(chunk)
+        return JsonResponse({'message': 'File uploaded'})

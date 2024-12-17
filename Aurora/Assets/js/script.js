@@ -99,26 +99,6 @@ function createPostCard(post) {
     // 좋아요 버튼 영역
     const likeContainer = document.createElement('div');
     likeContainer.className = 'like-container';
-    
-    const likeIcon = document.createElement('img');
-    likeIcon.src = getImageUrl(`like_${post.isLiked ? 'on' : 'off'}.png`, true);
-    likeIcon.alt = 'Like';
-    likeIcon.className = 'like-icon';
-    likeIcon.dataset.postId = post.id;
-    
-    const likeCount = document.createElement('span');
-    likeCount.className = 'like-count';
-    likeCount.textContent = post.likes || 0;
-    // 좋아요 버튼 클릭 이벤트 추가
-    likeIcon.addEventListener('click', function() {
-        const feedId = this.dataset.feedId; // 클릭한 포스트의 ID 가져오기
-        toggleLike(this, feedId); // toggleLike 함수 호출
-    });
-    
-    likeContainer.appendChild(likeIcon);
-    likeContainer.appendChild(likeCount);
-
-    headerDiv.appendChild(userInfoContainer);
     headerDiv.appendChild(likeContainer);
     
     card.appendChild(headerDiv);
@@ -281,69 +261,60 @@ function formatDate(dateString) {
     return `${year}-${month}-${day}`;
 }
 
-// CSRF 토큰을 가져오는 부분
-const csrftoken = document.querySelector('meta[name="csrf-token"]')?.content;
-
-// toggleLike 함수 정의
-function toggleLike(feedId) {
-    if (!csrftoken) {
-        console.error('CSRF token is missing');
-        return;
-    }
-
-    fetch('/api/like-post', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': csrftoken
-        },
-        body: JSON.stringify({ feed_id: feedId })
-    })
-    .then(likedPostIds => {
-        // 서버에서 피드 게시물 가져오기
-        return fetch('/api/feed-posts')
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                return response.json();
-            })
-            .then(data => {
-                // 서버에서 받은 데이터로 포스트 매핑
-                const posts = data.posts.map(post => ({
-                    id: post.id,
-                    media_files: post.media_files || [],
-                    content: post.content,
-                    userImage: post.userImage || 'default_profile.png',
-                    username: post.username,
-                    user_id: post.user_id,
-                    date: post.date ? formatDate(post.date) : '날짜 없음',
-                    like_count: post.like_count || 0,
-                    isLiked: likedPostIds.includes(post.id),
-                }));
-
-                posts.forEach(post => {
-                    const postCard = createPostCard(post);
-                    feed.appendChild(postCard);
-                });
-            });
-    })
-    .catch(error => {
-        console.error('피드 게시물을 불러오는 중 오류 발생:', error);
-        const feed = document.querySelector('.feed');
-        feed.innerHTML = '<p class="error-message">게시물을 불러올 수 없습��다. 잠시 후 다시 시도해주세요.</p>';
-    });
-}
 
 document.addEventListener('DOMContentLoaded', function() {
-    // 좋아요 버튼 클릭 이벤트 추가
-    const likeIcons = document.querySelectorAll('.like-icon');
-    likeIcons.forEach(likeIcon => {
-        likeIcon.addEventListener('click', function() {
-            const feedId = this.dataset.feedId; // postId를 feedId로 수정
-            toggleLike(feedId); // toggleLike 함수 호출
-        });
-    });
+    // CSRF 토큰을 가져오는 부분을 DOMContentLoaded 안으로 이동
+    const csrftoken = document.querySelector('meta[name="csrf-token"]')?.content;
+
+    function toggleLike(feedId) {
+        if (!csrftoken) {
+            console.error('CSRF token is missing'); // CSRF 토큰이 없을 경우 에러 로그
+            return; // 함수 종료
+        }
+
+        fetch('/api/like-post', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrftoken
+            },
+            body: JSON.stringify({ feed_id: feedId })
+        })
+            .then(likedPostIds => {
+                // 서버에서 피드 게시물 가져오기
+                return fetch('/api/feed-posts')
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        // 서버에서 받은 데이터로 포스트 매핑
+                        const posts = data.posts.map(post => ({
+                            id: post.id,
+                            media_files: post.media_files || [],
+                            content: post.content,
+                            userImage: post.userImage || 'default_profile.png',
+                            username: post.username,
+                            user_id: post.user_id,
+                            date: post.date ? formatDate(post.date) : '날짜 없음',
+                            like_count: post.like_count || 0,
+                            isLiked: likedPostIds.includes(post.id),
+                        }));
+
+                        posts.forEach(post => {
+                            const postCard = createPostCard(post);
+                            feed.appendChild(postCard);
+                        });
+                    });
+            })
+            .catch(error => {
+                console.error('피드 게시물을 불러오는 중 오류 발생:', error);
+                const feed = document.querySelector('.feed');
+                feed.innerHTML = '<p class="error-message">게시물을 불러올 수 없습니다. 잠시 후 다시 시도해주세요.</p>';
+            });
+    };
 
     const feed = document.querySelector('.feed');
     // 서버에서 피드 게시물 가져오기
@@ -394,66 +365,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 currentPostIndex = index;
             }
         });
-    });
-
-    const searchButton = document.getElementById('searchButton');
-    const searchInput = document.getElementById('searchInput');
-    const searchResults = document.getElementById('searchResults');
-
-    searchButton.addEventListener('click', function() {
-        const query = searchInput.value.trim();
-        if (query) {
-            fetch(`/api/search?query=${encodeURIComponent(query)}`)
-                .then(response => response.json())
-                .then(data => {
-                    // 기존 피드 숨기기
-                    const feed = document.querySelector('.feed');
-                    feed.style.display = 'none';
-                    
-                    // 검색 결과 표시
-                    searchResults.innerHTML = '';
-                    
-                    // 검색 결과가 없는 경우
-                    if (!data.results || data.results.length === 0) {
-                        const noResultsMsg = document.createElement('div');
-                        noResultsMsg.className = 'no-results-message';
-                        noResultsMsg.textContent = '일치하는 관련 게시물이 없습니다.';
-                        searchResults.appendChild(noResultsMsg);
-                        return;
-                    }
-
-                    // 검색 결과가 있는 경우 - createPostCard 함수를 사용하여 게시물 형태로 표시
-                    data.results.forEach(post => {
-                        const postCard = createPostCard({
-                            id: post.id,
-                            username: post.username,
-                            desc: post.description,
-                            media_files: post.media_files || [],
-                            date: post.date,
-                            like_count: post.like_count || 0,
-                            isLiked: post.isLiked || false,
-                            user_id: post.user_id
-                        });
-                        searchResults.appendChild(postCard);
-                    });
-                })
-                .catch(error => {
-                    console.error('검색 중 오류 발생:', error);
-                    searchResults.innerHTML = '<div class="error-message">검색 중 오류가 발생했습니다.</div>';
-                });
-        } else {
-            // 검색어가 없는 경우 기존 피드 표시
-            const feed = document.querySelector('.feed');
-            feed.style.display = 'block';
-            searchResults.innerHTML = '';
-        }
-    });
-
-    // 엔터키로도 검색 가능하도록
-    searchInput.addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') {
-            searchButton.click();
-        }
     });
 });
 
@@ -530,28 +441,3 @@ document.querySelectorAll('.profile-image, .username').forEach(element => {
         }
     });
 });
-
-function updateImagePreview() {
-    const input = document.getElementById('imageInput');
-    const preview = document.querySelector('.image-preview');
-    const initialUpload = document.querySelector('.initial-upload');
-    const placeholder = preview.querySelector('.placeholder');
-
-    if (input.files && input.files[0]) {
-        // 초기 업로드 버튼 숨기기
-        initialUpload.style.display = 'none';
-        // 이미지 프리뷰 영역 보이기
-        preview.style.display = 'flex';
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            placeholder.style.display = 'none';
-
-            // 새로운 이미지 추가
-            const img = document.createElement('img');
-            img.src = e.target.result;
-            preview.appendChild(img);
-        }
-        reader.readAsDataURL(input.files[0]);
-    }
-}
-
