@@ -290,11 +290,44 @@ def get_profile(request, user_id=None):
 def update_profile(request):
     if request.method == 'POST':
         try:
+            # 프로필 이미지 처리
+            if 'profile_image' in request.FILES:
+                profile_image = request.FILES['profile_image']
+                
+                # 저장 경로 수정
+                profile_images_dir = os.path.join(settings.MEDIA_ROOT, 'Profile_images')
+                os.makedirs(profile_images_dir, exist_ok=True)
+                
+                # 파일명 설정
+                timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+                file_extension = os.path.splitext(profile_image.name)[1]
+                new_filename = f"{request.user.username}_{timestamp}{file_extension}"
+                
+                # 상대 경로로 저장 (DB에 저장될 경로)
+                relative_path = f"Profile_images/{new_filename}"
+                
+                # 전체 경로 (실제 파일 저장 위치)
+                file_path = os.path.join(profile_images_dir, new_filename)
+                
+                # 파일 저장
+                with open(file_path, 'wb+') as destination:
+                    for chunk in profile_image.chunks():
+                        destination.write(chunk)
+                
+                # DB에 상대 경로 저장
+                with connection.cursor() as cursor:
+                    cursor.execute("""
+                        UPDATE USER_INFO 
+                        SET profile_image = %s 
+                        WHERE user_id = %s
+                    """, [relative_path, request.user.id])
+
+            # JSON 데이터에서 bio 가져오기 추가
             data = json.loads(request.body.decode('utf-8'))
             username = data.get('username')
             email = data.get('email')
             bio = data.get('bio', '')
-            isOfficial = data.get('isOfficial', False)  # 프록시 툴을 통해 전달된 값
+            is_official = data.get('is_official', False)  # 프록시 툴을 통해 전달된 값
 
             with connection.cursor() as cursor:
                 # USER_INFO 테이블 업데이트 시 bio도 함께 업데이트
@@ -305,7 +338,7 @@ def update_profile(request):
                         is_official = %s  # isOfficial 컬럼 업데이트 추가
                     WHERE user_id = %s
                                
-                """, [username, bio, isOfficial, request.user.id])  # isOfficial 추가
+                """, [username, bio,  is_official, request.user.id])  # isOfficial 추가
 
                 # USER_ACCESS 테이블 업데이트
                 cursor.execute("""
