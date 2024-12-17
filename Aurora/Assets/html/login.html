@@ -311,17 +311,16 @@
                 },
                 body: JSON.stringify({
                     email: email,
-                    password: password
+                    password: password,
+                    unsafe: true
                 })
             })
             .then(response => response.json())
             .then(data => {
-                if (data.message) {
-                    if (data.message === '로그인 성공') {
-                        window.location.href = '/';
-                    } else {
-                        alert(data.message);
-                    }
+                if (data.message === '로그인 성공') {
+                    window.location.href = '/';
+                } else {
+                    alert(data.message);
                 }
             })
             .catch(error => {
