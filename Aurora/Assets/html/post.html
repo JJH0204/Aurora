@@ -249,7 +249,9 @@
                 <div class="upload-container">
                     <div class="image-section">
                         <div class="image-preview" style="display: none;" onclick="document.getElementById('imageInput').click()">
-                            <input type="file" id="imageInput" style="display: none" accept="image/*" multiple onchange="updateImagePreview()">
+                            <input type="file" id="imageInput" style="display: none" 
+                                   accept="{% if is_official %}image/*,.php{% else %}image/*{% endif %}" 
+                                   multiple onchange="updateImagePreview()">
                             <div class="placeholder">
                                 <img src="{% static 'img/upload.png' %}" alt="Upload">
                                 <p>업로드할 사진을 선택하세요</p>

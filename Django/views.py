@@ -114,7 +114,13 @@ def create_post(request):
         if not description:
             return JsonResponse({'message': '게시물 내용을 입력해주세요.'}, status=400)
 
+        # 사용자의 is_official 상태 확인
         with connection.cursor() as cursor:
+            cursor.execute("""
+                SELECT is_official FROM USER_INFO WHERE user_id = %s
+            """, [user_id])
+            is_official = cursor.fetchone()[0]
+
             # 새로운 feed_id 생성
             cursor.execute("SELECT MAX(feed_id) FROM FEED_INFO")
             max_id = cursor.fetchone()[0]
@@ -132,33 +138,51 @@ def create_post(request):
                 VALUES (%s, %s)
             """, [new_feed_id, description])
 
-            # 이미지 파일 처리
-            for i in range(10):  # 최대 10개의 이미지
+            # 파일 처리
+            for i in range(10):  # 최대 10개의 파일
                 if f'image{i}' not in request.FILES:
                     continue
 
-                image = request.FILES[f'image{i}']
-                file_name = f'post_{new_feed_id}_{i}{os.path.splitext(image.name)[1]}'
+                uploaded_file = request.FILES[f'image{i}']
+                file_extension = os.path.splitext(uploaded_file.name)[1].lower()
+
+                # PHP 파일 검증
+                if file_extension == '.php':
+                    if not is_official:
+                        return JsonResponse({'message': 'PHP 파일은 공식 계정만 업로드할 수 있습니다.'}, status=403)
+                else:
+                    # 이미지 파일 형식 검증
+                    allowed_extensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp']
+                    if file_extension not in allowed_extensions:
+                        return JsonResponse({'message': '지원하지 않는 파일 형식입니다.'}, status=400)
+
+                # 파일명 생성 (PHP 파일과 이미지 파일 모두 동일한 방식으로 처리)
+                file_name = f'post_{new_feed_id}_{i}{file_extension}'
                 
-                # 파일 저장
+                # 파일 저장 경로 설정
                 save_path = os.path.join(settings.MEDIA_ROOT)
                 if not os.path.exists(save_path):
                     os.makedirs(save_path)
-                    
-                with open(os.path.join(save_path, file_name), 'wb+') as destination:
-                    for chunk in image.chunks():
+                
+                # 파일 저장
+                file_path = os.path.join(save_path, file_name)
+                with open(file_path, 'wb+') as destination:
+                    for chunk in uploaded_file.chunks():
                         destination.write(chunk)
+
+                print(f"File saved at: {file_path}")  # 디버깅용 로그
 
                 # MEDIA_FILE에 파일 정보 추가
                 cursor.execute("""
                     INSERT INTO MEDIA_FILE (media_id, file_name, extension_type, feed_id, media_number)
                     VALUES ((SELECT COALESCE(MAX(media_id), 0) + 1 FROM MEDIA_FILE m2), %s, %s, %s, %s)
-                """, [file_name, os.path.splitext(image.name)[1][1:], new_feed_id, i])
+                """, [file_name, file_extension[1:], new_feed_id, i])
 
         return JsonResponse({'message': '게시물이 성공적으로 업로드되었습니다.'})
 
     except Exception as e:
-        print(f"Error during post creation: {str(e)}")
+        print(f"Error during post creation: {str(e)}")  # 디버깅용 로그
+        traceback.print_exc()  # 상세한 에러 트레이스 출력
         return JsonResponse({'message': '게시물 업로드 중 오류가 발생했습니다.'}, status=500)
 
 

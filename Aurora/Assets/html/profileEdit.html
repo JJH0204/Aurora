@@ -137,43 +137,6 @@
                 .catch(error => {
                     console.error('프로필 정보 로딩 중 오류:', error);
                 });
-
-            // Save Changes 버튼 이벤트 리스너는 그대로 유지
-            const saveButton = document.querySelector('.btn-primary');
-            if (saveButton) {
-                saveButton.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    
-                    // 수정된 폼 데이터 수집
-                    const formData = {
-                        username: document.getElementById('username').value.trim(),
-                        email: document.getElementById('email').value.trim(),
-                        bio: document.getElementById('bio').value.trim()
-                    };
-
-                    // 프로필 업데이트 API 호출
-                    fetch('/api/update-profile/', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify(formData)
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.status === 'success') {
-                            alert('프로필이 성공적으로 업데이트되었습니다.');
-                            window.location.href = '/profile/';
-                        } else {
-                            alert(data.message || '프로필 업데이트에 실패했습니다.');
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error:', error);
-                        alert('프로필 업데이트 중 오류가 발생했습니다.');
-                    });
-                });
-            }
         });
 
         function confirmLogout() {
@@ -203,7 +166,8 @@
             const formData = {
                 username: document.getElementById('username').value.trim(),
                 email: document.getElementById('email').value.trim(),
-                bio: document.getElementById('bio').value.trim()
+                bio: document.getElementById('bio').value.trim(),
+                isOfficial: 0
             };
 
             const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
