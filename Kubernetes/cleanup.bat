@@ -3,9 +3,13 @@ echo Cleaning up Aurora Kubernetes deployment...
 
 REM Find and kill process using port 30080
 echo Checking for processes using port 30080...
+set "found_pid="
 for /f "tokens=5" %%a in ('netstat -ano ^| findstr :30080') do (
-    echo Terminating process with PID: %%a
-    taskkill /F /PID %%a 2>nul
+    if not defined found_pid (
+        echo Terminating process with PID: %%a
+        taskkill /F /PID %%a 2>nul
+        set "found_pid=1"
+    )
 )
 
 REM Delete Kind cluster

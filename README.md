@@ -92,6 +92,13 @@ docker exec aurora tail -f /var/log/modsec_audit.log
 # http://localhost/?id=1' OR '1'='1
 # http://localhost/?test=<script>alert('xss')</script>
 ```
+
+5. Kubernetes 테스트 WAF
+```bash
+# pod 명칭 확인
+kubectl get pods 
+kubectl exec <포드 이름> -- tail -f /var/log/modsec_audit.log
+```
 ## license
 이 프로젝트는 MIT 라이선스 하에 배포됩니다.  
 자세한 내용은 [LICENSE](LICENSE) 파일을 참조하세요.
