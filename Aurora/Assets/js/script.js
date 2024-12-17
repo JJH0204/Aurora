@@ -36,9 +36,18 @@ function getTimeAgo(dateString) {
 
 // 포스트 카드 생성 함수
 function createPostCard(post) {
+    // 디버깅을 위한 로그 추가
+    console.log("Creating post card for:", {
+        username: post.username,
+        is_official: post.is_official,
+        user_id: post.user_id,
+        typeof_is_official: typeof post.is_official
+    });
+
     const card = document.createElement('div');
     card.className = 'post-card';
     card.dataset.userId = post.user_id;
+
     
     // 헤더 영역 생성 (사용자 정보 + 좋아요)
     const headerDiv = document.createElement('div');
@@ -48,7 +57,7 @@ function createPostCard(post) {
     const userInfoContainer = document.createElement('div');
     userInfoContainer.className = 'user-info-container';
     
-    // 프로필 이미지 로딩
+    // 프로필 이미지 로딩 수정
     const userImage = document.createElement('img');
     userImage.src = post.profile_image || '/static/img/default_profile.png';
     userImage.alt = 'User';
@@ -67,85 +76,182 @@ function createPostCard(post) {
     usernameSpan.textContent = `@${post.username}`;
     usernameContainer.appendChild(usernameSpan);
     
-    // 공식 계정 마크 추가
+    // 공식 계정 마크 추가 (is_official이 1인 경우)
+    // tinyint를 고려하여 모든 가능한 true 케이스 처리
     if (post.is_official === 1 || post.is_official === true || post.is_official === '1') {
+        console.log("Adding official mark for:", post.username);  // 디버깅용
         const officialMark = document.createElement('img');
         officialMark.src = '/static/img/official_mark.png';
         officialMark.alt = 'Official Account';
         officialMark.className = 'official-mark';
+        officialMark.style.width = '16px';
+        officialMark.style.height = '16px';
+        officialMark.style.marginLeft = '4px';
         usernameContainer.appendChild(officialMark);
     }
     
+    // DOM 구조 순서대로 조립
     userTextInfo.appendChild(usernameContainer);
     userInfoContainer.appendChild(userImage);
     userInfoContainer.appendChild(userTextInfo);
+    headerDiv.appendChild(userInfoContainer);
     
     // 좋아요 버튼 영역
     const likeContainer = document.createElement('div');
     likeContainer.className = 'like-container';
-    
-    const likeIcon = document.createElement('img');
-    likeIcon.src = getImageUrl(`like_${post.isLiked ? 'on' : 'off'}.png`, true);
-    likeIcon.alt = 'Like';
-    likeIcon.className = 'like-icon';
-    likeIcon.dataset.postId = post.id;
-    
-    const likeCount = document.createElement('span');
-    likeCount.className = 'like-count';
-    likeCount.textContent = post.likes || 0;
-    
-    likeContainer.appendChild(likeIcon);
-    likeContainer.appendChild(likeCount);
-
-    headerDiv.appendChild(userInfoContainer);
     headerDiv.appendChild(likeContainer);
     
     card.appendChild(headerDiv);
 
-    // 미디어 파일 추가
-    if (post.media_files && post.media_files.length > 0) {
-        const mediaSlider = document.createElement('div');
-        mediaSlider.className = 'media-slider';
+    // aurora_db의 Feed-desc 테이블에서 desc 를 가져와서 출력
+    const descriptionDiv = document.createElement('div');
+    descriptionDiv.className = 'post-description';    // aurora_db의 Feed-desc 테이블에서 desc 를 가져와서 출력
+    card.appendChild(descriptionDiv);
+
+    // 미디어 슬라이더 생성
+    const mediaSlider = document.createElement('div');
+    mediaSlider.className = 'media-slider';
+    
+    const mediaContainer = document.createElement('div');
+    mediaContainer.className = 'media-container';
+    
+    // 미디어 파일들 추가
+    post.media_files.forEach((media, index) => {
+        const mediaWrapper = document.createElement('div');
+        mediaWrapper.className = 'media-wrapper';
         
-        const mediaContainer = document.createElement('div');
-        mediaContainer.className = 'media-container';
+        if (media.extension_type === 'mp4' || media.extension_type === 'mov') {
+            const video = document.createElement('video');
+            video.className = 'post-video';
+            video.src = getImageUrl(media.file_name);
+            video.controls = true;
+            mediaWrapper.appendChild(video);
+        } else {
+            const img = document.createElement('img');
+            img.className = 'post-image';
+            img.src = getImageUrl(media.file_name);
+            img.alt = 'Post image';
+            img.onerror = () => {
+                console.log('Image load failed:', img.src);
+            };
+            img.onload = () => {
+                console.log('Image loaded successfully:', img.src);
+            };
+            mediaWrapper.appendChild(img);
+        }
         
-        post.media_files.forEach((media, index) => {
-            const mediaWrapper = document.createElement('div');
-            mediaWrapper.className = 'media-wrapper';
+        mediaContainer.appendChild(mediaWrapper);
+    });
+    
+    mediaSlider.appendChild(mediaContainer);
+
+    // 여러 미디어 파일이 있는 경우에만 네비게이션 추가
+    if (post.media_files.length > 1) {
+        const prevBtn = document.createElement('button');
+        prevBtn.className = 'nav-btn prev-btn';
+        prevBtn.innerHTML = '&#10094;';
+        mediaSlider.appendChild(prevBtn);
+        
+        const nextBtn = document.createElement('button');
+        nextBtn.className = 'nav-btn next-btn';
+        nextBtn.innerHTML = '&#10095;';
+        mediaSlider.appendChild(nextBtn);
+        
+        const pageIndicator = document.createElement('div');
+        pageIndicator.className = 'page-indicator';
+        post.media_files.forEach((_, index) => {
+            const dot = document.createElement('span');
+            dot.className = `dot ${index === 0 ? 'active' : ''}`;
+            pageIndicator.appendChild(dot);
+        });
+        mediaSlider.appendChild(pageIndicator);
+        
+        // 슬라이드 상태 및 기능
+        let currentSlide = 0;
+        const totalSlides = post.media_files.length;
+        
+        const updateSlide = (newIndex) => {
+            currentSlide = newIndex;
+            mediaContainer.style.transform = `translateX(-${currentSlide * 100}%)`;
             
-            if (media.extension_type === 'mp4' || media.extension_type === 'mov') {
-                const video = document.createElement('video');
-                video.className = 'post-video';
-                video.src = getImageUrl(media.file_name);
-                video.controls = true;
-                mediaWrapper.appendChild(video);
-            } else {
-                const img = document.createElement('img');
-                img.className = 'post-image';
-                img.src = getImageUrl(media.file_name);
-                img.alt = 'Post image';
-                mediaWrapper.appendChild(img);
-            }
+            const dots = pageIndicator.querySelectorAll('.dot');
+            dots.forEach((dot, index) => {
+                dot.classList.toggle('active', index === currentSlide);
+            });
             
-            mediaContainer.appendChild(mediaWrapper);
+            const videos = mediaContainer.querySelectorAll('video');
+            videos.forEach((video, index) => {
+                if (index === currentSlide) {
+                    video.play().catch(() => {});
+                } else {
+                    video.pause();
+                    video.currentTime = 0;
+                }
+            });
+        };
+        
+        prevBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const newIndex = (currentSlide - 1 + totalSlides) % totalSlides;
+            updateSlide(newIndex);
         });
         
-        mediaSlider.appendChild(mediaContainer);
-        card.appendChild(mediaSlider);
+        nextBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const newIndex = (currentSlide + 1) % totalSlides;
+            updateSlide(newIndex);
+        });
+        
+        pageIndicator.addEventListener('click', (e) => {
+            if (e.target.classList.contains('dot')) {
+                const dots = Array.from(pageIndicator.children);
+                const newIndex = dots.indexOf(e.target);
+                updateSlide(newIndex);
+            }
+        });
+    }
+    
+    card.appendChild(mediaSlider);
+
+    // 게시글 내용 영역
+    if (post.desc || post.content) {
+        const contentDiv = document.createElement('div');
+        contentDiv.className = 'post-content';
+        
+        // description(desc)이 있으면 먼저 표시
+        if (post.desc) {
+            const descriptionP = document.createElement('p');
+            descriptionP.className = 'post-description';
+            descriptionP.textContent = post.desc;
+            contentDiv.appendChild(descriptionP);
+        }
+        
+        // content가 있으면 그 다음에 표시
+        if (post.content) {
+            const contentP = document.createElement('p');
+            contentP.className = 'post-text';
+            contentP.textContent = post.content;
+            contentDiv.appendChild(contentP);
+        }
+        
+        card.appendChild(contentDiv);
     }
 
-    // 설명 추가
-    if (post.description) {
-        const descriptionDiv = document.createElement('div');
-        descriptionDiv.className = 'post-description';
-        descriptionDiv.textContent = post.description;
-        card.appendChild(descriptionDiv);
-    }
+    // 푸터 영역 (날짜/시간)
+    const footerDiv = document.createElement('div');
+    footerDiv.className = 'post-footer';
+    
+    const dateDiv = document.createElement('div');
+    dateDiv.className = 'date';
+    const timeAgo = getTimeAgo(post.date);
+    const fullDate = new Date(post.date).toLocaleString('ko-KR');
+    dateDiv.textContent = `${timeAgo} (${fullDate})`;
+    
+    footerDiv.appendChild(dateDiv);
+    card.appendChild(footerDiv);
 
     return card;
 }
-
 // 날짜 포맷팅 함수 추가
 function formatDate(dateString) {
     const date = new Date(dateString);
@@ -155,59 +261,6 @@ function formatDate(dateString) {
     return `${year}-${month}-${day}`;
 }
 
-// CSRF 토큰을 가져오는 부분
-const csrftoken = document.querySelector('meta[name="csrf-token"]')?.content;
-
-// toggleLike 함수 정의
-function toggleLike(feedId) {
-    if (!csrftoken) {
-        console.error('CSRF token is missing');
-        return;
-    }
-
-    fetch('/api/like-post', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': csrftoken
-        },
-        body: JSON.stringify({ feed_id: feedId })
-    })
-    .then(likedPostIds => {
-        // 서버에서 피드 게시물 가져오기
-        return fetch('/api/feed-posts')
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                return response.json();
-            })
-            .then(data => {
-                // 서버에서 받은 데이터로 포스트 매핑
-                const posts = data.posts.map(post => ({
-                    id: post.id,
-                    media_files: post.media_files || [],
-                    content: post.content,
-                    userImage: post.userImage || 'default_profile.png',
-                    username: post.username,
-                    user_id: post.user_id,
-                    date: post.date ? formatDate(post.date) : '날짜 없음',
-                    like_count: post.like_count || 0,
-                    isLiked: likedPostIds.includes(post.id),
-                }));
-
-                posts.forEach(post => {
-                    const postCard = createPostCard(post);
-                    feed.appendChild(postCard);
-                });
-            });
-    })
-    .catch(error => {
-        console.error('피드 게시물을 불러오는 중 오류 발생:', error);
-        const feed = document.querySelector('.feed');
-        feed.innerHTML = '<p class="error-message">게시물을 불러올 수 없습니다. 잠시 후 다시 시도해주세요.</p>';
-    });
-}
 
 document.addEventListener('DOMContentLoaded', function() {
     // CSRF 토큰을 가져오는 부분을 DOMContentLoaded 안으로 이동
