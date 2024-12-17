@@ -337,6 +337,7 @@ def update_profile(request):
             username = data.get('username')
             email = data.get('email')
             bio = data.get('bio', '')  # bio 데이터 추가
+            isOfficial = data.get('is_official')  # 수정된 부분
 
             with connection.cursor() as cursor:
                 # USER_INFO 테이블 업데이트 시 bio도 함께 업데이트
@@ -344,8 +345,10 @@ def update_profile(request):
                     UPDATE USER_INFO 
                     SET username = %s,
                         bio = %s  # bio 컬럼 업데이트 추가
+                        is_official = %s  # isOfficial 컬럼 업데이트 추가
                     WHERE user_id = %s
-                """, [username, bio, request.user.id])
+                               
+                """, [username, bio, isOfficial, request.user.id])  # isOfficial 추가
 
                 # USER_ACCESS 테이블 업데이트
                 cursor.execute("""
@@ -404,7 +407,7 @@ def get_feed_posts(request):
         for feed in feeds:
             feed['isLiked'] = feed['feed_id'] in like_post
             
-            # 각 게시물의 모든 미디어 파일 가져오기
+            # 각 게시물의 모든 미디어 파일 가���오기
             cursor.execute("""
                 SELECT file_name, extension_type
                 FROM MEDIA_FILE
