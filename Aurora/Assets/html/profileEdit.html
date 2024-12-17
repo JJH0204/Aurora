@@ -163,38 +163,37 @@
         }
 
         function saveProfile() {
-            const formData = {
-                username: document.getElementById('username').value.trim(),
-                email: document.getElementById('email').value.trim(),
-                bio: document.getElementById('bio').value.trim(),
-                isOfficial: document.getElementById('is_official').value.trim()
-            };
+    const formData = {
+        username: document.getElementById('username').value.trim(),
+        email: document.getElementById('email').value.trim(),
+        bio: document.getElementById('bio').value.trim(),
+        is_official: 0 //  0 또는 1 
+    };
 
-            const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
 
-            fetch('/api/update-profile/', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': csrftoken
-                },
-                body: JSON.stringify(formData)
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.status === 'success') {
-                    alert('프로필이 성공적으로 업데이트되었습니다.');
-                    window.location.href = '/profile/';
-                } else {
-                    alert(data.message || '프로필 업데이트에 실패했습니다.');
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('프로필 업데이트 중 오류가 발생했습니다.');
-            });
+    fetch('/api/update-profile/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrftoken
+        },
+        body: JSON.stringify(formData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            alert('프로필이 성공적으로 업데이트되었습니다.');
+            window.location.href = '/profile/';
+        } else {
+            alert(data.message || '프로필 업데이트에 실패했습니다.');
         }
-
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('프로필 업데이트 중 오류가 발생했습니다.');
+    });
+}
         // 모든 프로필 이미지 업데이트 함수 추가
         function updateAllProfileImages() {
             const profileImages = document.querySelectorAll('.profile-image');

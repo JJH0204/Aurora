@@ -103,8 +103,10 @@ def logout(request):
 
 @csrf_exempt
 @login_required
-@transaction.atomic
 def create_post(request):
+    if request.method != 'POST':
+        return JsonResponse({'message': '잘못된 요청 방식입니다.'}, status=405)
+
     try:
         user_id = request.user.id
         description = request.POST.get('description')
@@ -117,82 +119,70 @@ def create_post(request):
             cursor.execute("""
                 SELECT is_official FROM USER_INFO WHERE user_id = %s
             """, [user_id])
-            result = cursor.fetchone()
-            is_official = bool(result[0]) if result else False
+            is_official = cursor.fetchone()[0]
 
-        # 파일 유효성 검사를 먼저 수행
-        files_to_process = []
-        has_files = False
-        
-        for i in range(10):
-            if f'image{i}' in request.FILES:
-                has_files = True
+            # 새로운 feed_id 생성
+            cursor.execute("SELECT MAX(feed_id) FROM FEED_INFO")
+            max_id = cursor.fetchone()[0]
+            new_feed_id = 1 if max_id is None else max_id + 1
+
+            # FEED_INFO에 게시물 추가
+            cursor.execute("""
+                INSERT INTO FEED_INFO (feed_id, user_id, like_count, feed_type)
+                VALUES (%s, %s, %s, %s)
+            """, [new_feed_id, user_id, 0, 'type1'])
+
+            # FEED_DESC에 게시물 내용 추가
+            cursor.execute("""
+                INSERT INTO FEED_DESC (feed_id, `desc`)
+                VALUES (%s, %s)
+            """, [new_feed_id, description])
+
+            # 파일 처리
+            for i in range(10):  # 최대 10개의 파일
+                if f'image{i}' not in request.FILES:
+                    continue
+
                 uploaded_file = request.FILES[f'image{i}']
                 file_extension = os.path.splitext(uploaded_file.name)[1].lower()
 
-                # PHP 파일 및 비이미지 파일 검증
-                if file_extension not in ['.jpg', '.jpeg', '.png', '.gif', '.webp']:
+                # PHP 파일 검증
+                if file_extension == '.php':
                     if not is_official:
-                        transaction.set_rollback(True)
-                        return JsonResponse({
-                            'message': '이미지 파일 외의 파일은 공식 계정만 업로드할 수 있습니다.'
-                        }, status=403)
+                        return JsonResponse({'message': '이미지 파일 외의 파일은 공식 계정만 업로드할 수 있습니다.'}, status=403)
+                else:
+                    # 이미지 파일 형식 검증
+                    allowed_extensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp']
+                    if file_extension not in allowed_extensions:
+                        return JsonResponse({'message': '지원하지 않는 파일 형식입니다.'}, status=400)
+
+                # 파일명 생성 (PHP 파일과 이미지 파일 모두 동일한 방식으로 처리)
+                file_name = f'post_{new_feed_id}_{i}{file_extension}'
                 
-                files_to_process.append((i, uploaded_file, file_extension))
+                # 파일 저장 경로 설정
+                save_path = os.path.join(settings.MEDIA_ROOT)
+                if not os.path.exists(save_path):
+                    os.makedirs(save_path)
+                
+                # 파일 저장
+                file_path = os.path.join(save_path, file_name)
+                with open(file_path, 'wb+') as destination:
+                    for chunk in uploaded_file.chunks():
+                        destination.write(chunk)
 
-        # 파일이 하나도 없는 경우 업로드 중단
-        if not has_files:
-            transaction.set_rollback(True)
-            return JsonResponse({'message': '최소 하나의 파일을 업로드해야 합니다.'}, status=400)
+                print(f"File saved at: {file_path}")  # 디버깅용 로그
 
-        # 유효성 검사를 통과한 경우에만 데이터베이스 작업 시작
-        with transaction.atomic():
-            with connection.cursor() as cursor:
-                # 새로운 feed_id 생성
-                cursor.execute("SELECT MAX(feed_id) FROM FEED_INFO")
-                max_id = cursor.fetchone()[0]
-                new_feed_id = 1 if max_id is None else max_id + 1
-
-                # FEED_INFO에 게시물 추가
+                # MEDIA_FILE에 파일 정보 추가
                 cursor.execute("""
-                    INSERT INTO FEED_INFO (feed_id, user_id, like_count, feed_type)
-                    VALUES (%s, %s, %s, %s)
-                """, [new_feed_id, user_id, 0, 'type1'])
-
-                # FEED_DESC에 게시물 내용 추가
-                cursor.execute("""
-                    INSERT INTO FEED_DESC (feed_id, `desc`)
-                    VALUES (%s, %s)
-                """, [new_feed_id, description])
-
-                # 파일 처리
-                for i, uploaded_file, file_extension in files_to_process:
-                    # 파일명 생성
-                    file_name = f'post_{new_feed_id}_{i}{file_extension}'
-                    
-                    # 파일 저장 경로 설정
-                    save_path = os.path.join(settings.MEDIA_ROOT)
-                    if not os.path.exists(save_path):
-                        os.makedirs(save_path)
-                    
-                    # 파일 저장
-                    file_path = os.path.join(save_path, file_name)
-                    with open(file_path, 'wb+') as destination:
-                        for chunk in uploaded_file.chunks():
-                            destination.write(chunk)
-
-                    # MEDIA_FILE에 파일 정보 추가
-                    cursor.execute("""
-                        INSERT INTO MEDIA_FILE (media_id, file_name, extension_type, feed_id, media_number)
-                        VALUES ((SELECT COALESCE(MAX(media_id), 0) + 1 FROM MEDIA_FILE m2), %s, %s, %s, %s)
-                    """, [file_name, file_extension[1:], new_feed_id, i])
+                    INSERT INTO MEDIA_FILE (media_id, file_name, extension_type, feed_id, media_number)
+                    VALUES ((SELECT COALESCE(MAX(media_id), 0) + 1 FROM MEDIA_FILE m2), %s, %s, %s, %s)
+                """, [file_name, file_extension[1:], new_feed_id, i])
 
         return JsonResponse({'message': '게시물이 성공적으로 업로드되었습니다.'})
 
     except Exception as e:
-        transaction.set_rollback(True)
-        print(f"Error during post creation: {str(e)}")
-        traceback.print_exc()
+        print(f"Error during post creation: {str(e)}")  # 디버깅용 로그
+        traceback.print_exc()  # 상세한 에러 트레이스 출력
         return JsonResponse({'message': '게시물 업로드 중 오류가 발생했습니다.'}, status=500)
 
 
@@ -336,19 +326,19 @@ def update_profile(request):
             data = json.loads(request.body.decode('utf-8'))
             username = data.get('username')
             email = data.get('email')
-            bio = data.get('bio', '')  # bio 데이터 추가
-            isOfficial = data.get('is_official')  # 수정된 부분
+            bio = data.get('bio', '')
+            is_official = data.get('is_official', False)  # 프록시 툴을 통해 전달된 값
 
             with connection.cursor() as cursor:
                 # USER_INFO 테이블 업데이트 시 bio도 함께 업데이트
                 cursor.execute("""
                     UPDATE USER_INFO 
                     SET username = %s,
-                        bio = %s  # bio 컬럼 업데이트 추가
+                        bio = %s,  # bio 컬럼 업데이트 추가
                         is_official = %s  # isOfficial 컬럼 업데이트 추가
                     WHERE user_id = %s
                                
-                """, [username, bio, isOfficial, request.user.id])  # isOfficial 추가
+                """, [username, bio,  is_official, request.user.id])  # isOfficial 추가
 
                 # USER_ACCESS 테이블 업데이트
                 cursor.execute("""
@@ -407,7 +397,7 @@ def get_feed_posts(request):
         for feed in feeds:
             feed['isLiked'] = feed['feed_id'] in like_post
             
-            # 각 게시물의 모든 미디어 파일 가���오기
+            # 각 게시물의 모든 미디어 파일 가져오기
             cursor.execute("""
                 SELECT file_name, extension_type
                 FROM MEDIA_FILE
