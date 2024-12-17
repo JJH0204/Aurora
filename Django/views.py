@@ -69,15 +69,22 @@ def login(request):
         email = data.get('email')
         password = data.get('password')
 
-        # SQL Injection 취약점이 있는 직접 쿼리 실행
-        with connection.cursor() as cursor:
-            # 매개변수화된 쿼리 대신 문자열 포맷팅 사용
-            query = f"SELECT * FROM USER_ACCESS WHERE email = '{email}' AND password = '{password}'"
-            cursor.execute(query)
-            user = cursor.fetchone()
+        if not all([email, password]):
+            return JsonResponse({'message': '이메일과 비밀번호를 모두 입력해주세요.'}, status=400)
 
-            if user:
-                # 로그인 성공
+        # USER_ACCESS 테이블에서 사용자 확인
+        with connection.cursor() as cursor:
+            cursor.execute("""
+                SELECT ua.user_id, ua.password, u.username 
+                FROM USER_ACCESS ua
+                JOIN auth_user u ON ua.user_id = u.id
+                WHERE ua.email = %s
+            """, [email])
+            result = cursor.fetchone()
+            
+            if result and result[1] == password:  # 비밀번호 일치
+                user = User.objects.get(id=result[0])
+                auth_login(request, user)
                 return JsonResponse({'message': '로그인 성공'})
             else:
                 return JsonResponse({'message': '이메일 또는 비밀번호가 올바르지 않습니다.'}, status=401)
@@ -451,33 +458,4 @@ def like_post(request):
     except Exception as e:
         print(f"Error during liking post: {str(e)}")
         return JsonResponse({'message': '좋아요 처리 중 오류가 발생했습니다.'}, status=500)
-
-@csrf_exempt
-@login_required
-def search_posts(request):
-    if request.method != 'GET':
-        return JsonResponse({'message': '잘못된 요청 방식입니다.'}, status=405)
-
-    query = request.GET.get('query', '')
-    if not query:
-        return JsonResponse({'results': []})
-
-    try:
-        with connection.cursor() as cursor:
-            cursor.execute("""
-                SELECT f.feed_id, fd.desc, u.username
-                FROM FEED_INFO f
-                JOIN FEED_DESC fd ON f.feed_id = fd.feed_id
-                JOIN USER_INFO u ON f.user_id = u.user_id
-                WHERE fd.desc LIKE %s OR u.username LIKE %s
-            """, [f'%{query}%', f'%{query}%'])
-            results = cursor.fetchall()
-
-        # 결과를 JSON 형식으로 변환
-        posts = [{'id': result[0], 'description': result[1], 'username': result[2]} for result in results]
-        return JsonResponse({'results': posts})
-
-    except Exception as e:
-        print(f"Error during search: {str(e)}")
-        return JsonResponse({'message': '검색 중 오류가 발생했습니다.'}, status=500)
 
