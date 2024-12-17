@@ -167,7 +167,7 @@
                 username: document.getElementById('username').value.trim(),
                 email: document.getElementById('email').value.trim(),
                 bio: document.getElementById('bio').value.trim(),
-                isOfficial: 0
+                isOfficial: document.getElementById('is_official').value.trim()
             };
 
             const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
