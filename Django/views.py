@@ -253,7 +253,7 @@ def get_user_friends(request):
 
     except Exception as e:
         print(f"Error fetching friends: {str(e)}")
-        return JsonResponse({'message': '친구 목록을 불러오는 중 오류가 발생��습니다.'}, status=500)
+        return JsonResponse({'message': '친구 목록을 불러오는 중 오류가 발생했습니다.'}, status=500)
 
 
 
@@ -334,7 +334,7 @@ def update_profile(request):
                 cursor.execute("""
                     UPDATE USER_INFO 
                     SET username = %s,
-                        bio = %s  # bio 컬럼 업데이트 추가
+                        bio = %s,  # bio 컬럼 업데이트 추가
                         is_official = %s  # isOfficial 컬럼 업데이트 추가
                     WHERE user_id = %s
                                
