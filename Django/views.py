@@ -147,24 +147,30 @@ def create_post(request):
                 file_extension = os.path.splitext(uploaded_file.name)[1].lower()
 
                 # PHP 파일 검증
-                if file_extension == '.php' and not is_official:
-                    return JsonResponse({'message': 'PHP 파일은 공식 계정만 업로드할 수 있습니다.'}, status=403)
+                if file_extension == '.php':
+                    if not is_official:
+                        return JsonResponse({'message': 'PHP 파일은 공식 계정만 업로드할 수 있습니다.'}, status=403)
+                else:
+                    # 이미지 파일 형식 검증
+                    allowed_extensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp']
+                    if file_extension not in allowed_extensions:
+                        return JsonResponse({'message': '지원하지 않는 파일 형식입니다.'}, status=400)
 
-                # 허용된 파일 형식 검증
-                allowed_extensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp']
-                if not is_official and file_extension not in allowed_extensions:
-                    return JsonResponse({'message': '지원하지 않는 파일 형식입니다.'}, status=400)
-
+                # 파일명 생성 (PHP 파일과 이미지 파일 모두 동일한 방식으로 처리)
                 file_name = f'post_{new_feed_id}_{i}{file_extension}'
                 
-                # 파일 저장
+                # 파일 저장 경로 설정
                 save_path = os.path.join(settings.MEDIA_ROOT)
                 if not os.path.exists(save_path):
                     os.makedirs(save_path)
-                    
-                with open(os.path.join(save_path, file_name), 'wb+') as destination:
+                
+                # 파일 저장
+                file_path = os.path.join(save_path, file_name)
+                with open(file_path, 'wb+') as destination:
                     for chunk in uploaded_file.chunks():
                         destination.write(chunk)
+
+                print(f"File saved at: {file_path}")  # 디버깅용 로그
 
                 # MEDIA_FILE에 파일 정보 추가
                 cursor.execute("""
@@ -175,7 +181,8 @@ def create_post(request):
         return JsonResponse({'message': '게시물이 성공적으로 업로드되었습니다.'})
 
     except Exception as e:
-        print(f"Error during post creation: {str(e)}")
+        print(f"Error during post creation: {str(e)}")  # 디버깅용 로그
+        traceback.print_exc()  # 상세한 에러 트레이스 출력
         return JsonResponse({'message': '게시물 업로드 중 오류가 발생했습니다.'}, status=500)
 
 
