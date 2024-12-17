@@ -257,55 +257,60 @@ function formatDate(dateString) {
 }
 
 
-function toggleLike(element, feedId) {
-    const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-
-    fetch('/api/like-post', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': csrftoken
-        },
-        body: JSON.stringify({ feed_id: feedId })
-    })
-        .then(likedPostIds => {
-            // 서버에서 피드 게시물 가져오기
-            return fetch('/api/feed-posts')
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Network response was not ok');
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    // 서버에서 받은 데이터로 포스트 매핑
-                    const posts = data.posts.map(post => ({
-                        id: post.id,
-                        media_files: post.media_files || [],
-                        content: post.content,
-                        profile_image: post.profile_image || 'default_profile.png',
-                        username: post.username,
-                        user_id: post.user_id,
-                        date: post.date ? formatDate(post.date) : '날짜 없음',
-                        like_count: post.like_count || 0,
-                        isLiked: likedPostIds.includes(post.id),
-                    }));
-
-                    posts.forEach(post => {
-                        const postCard = createPostCard(post);
-                        feed.appendChild(postCard);
-                    });
-                });
-        })
-        .catch(error => {
-            console.error('피드 게시물을 불러오는 중 오류 발생:', error);
-            const feed = document.querySelector('.feed');
-            feed.innerHTML = '<p class="error-message">게시물을 불러올 수 없습니다. 잠시 후 다시 시도해주세요.</p>';
-        });
-};
-
-// 페이지 로드 시 포스트 생성 및 arrow 버튼 이벤트 추가
 document.addEventListener('DOMContentLoaded', function() {
+    // CSRF 토큰을 가져오는 부분을 DOMContentLoaded 안으로 이동
+    const csrftoken = document.querySelector('meta[name="csrf-token"]')?.content;
+
+    function toggleLike(feedId) {
+        if (!csrftoken) {
+            console.error('CSRF token is missing'); // CSRF 토큰이 없을 경우 에러 로그
+            return; // 함수 종료
+        }
+
+        fetch('/api/like-post', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrftoken
+            },
+            body: JSON.stringify({ feed_id: feedId })
+        })
+            .then(likedPostIds => {
+                // 서버에서 피드 게시물 가져오기
+                return fetch('/api/feed-posts')
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        // 서버에서 받은 데이터로 포스트 매핑
+                        const posts = data.posts.map(post => ({
+                            id: post.id,
+                            media_files: post.media_files || [],
+                            content: post.content,
+                            profile_image: post.profile_image || 'default_profile.png',
+                            username: post.username,
+                            user_id: post.user_id,
+                            date: post.date ? formatDate(post.date) : '날짜 없음',
+                            like_count: post.like_count || 0,
+                            isLiked: likedPostIds.includes(post.id),
+                        }));
+
+                        posts.forEach(post => {
+                            const postCard = createPostCard(post);
+                            feed.appendChild(postCard);
+                        });
+                    });
+            })
+            .catch(error => {
+                console.error('피드 게시물을 불러오는 중 오류 발생:', error);
+                const feed = document.querySelector('.feed');
+                feed.innerHTML = '<p class="error-message">게시물을 불러올 수 없습니다. 잠시 후 다시 시도해주세요.</p>';
+            });
+    };
+
     const feed = document.querySelector('.feed');
     // 서버에서 피드 게시물 가져오기
     fetch('/api/feed-posts')
@@ -321,10 +326,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 id: post.id,
                 media_files: post.media_files || [],
                 content: post.content,
-                userImage: post.userImage || 'default_profile.png',
+                profile_image: post.profile_image || 'default_profile.png',
                 username: post.username,
                 date: post.date,
-                likes: post.likes || 0,
+                like_count: post.like_count || 0,
                 isLiked: false,
                 desc: post.desc,
             }));

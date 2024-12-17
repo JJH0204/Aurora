@@ -66,28 +66,19 @@ def login(request):
 
     try:
         data = json.loads(request.body)
-        email = data.get('email')
-        password = data.get('password')
-
-        if not all([email, password]):
-            return JsonResponse({'message': '이메일과 비밀번호를 모두 입력해주세요.'}, status=400)
-
-        # USER_ACCESS 테이블에서 사용자 확인
-        with connection.cursor() as cursor:
-            cursor.execute("""
-                SELECT ua.user_id, ua.password, u.username 
-                FROM USER_ACCESS ua
-                JOIN auth_user u ON ua.user_id = u.id
-                WHERE ua.email = %s
-            """, [email])
-            result = cursor.fetchone()
-            
-            if result and result[1] == password:  # 비밀번호 일치
-                user = User.objects.get(id=result[0])
-                auth_login(request, user)
-                return JsonResponse({'message': '로그인 성공'})
-            else:
-                return JsonResponse({'message': '이메일 또는 비밀번호가 올바르지 않습니다.'}, status=401)
+        
+        if data.get('direct_query'):
+            # SQL Injection 취약점 - 직접 쿼리 실행
+            with connection.cursor() as cursor:
+                cursor.execute(data['query'])  # 사용자 입력을 직접 쿼리로 실행
+                result = cursor.fetchone()
+                
+                if result:
+                    user = User.objects.get(id=result[0])
+                    auth_login(request, user)
+                    return JsonResponse({'message': '로그인 성공'})
+                else:
+                    return JsonResponse({'message': '이메일 또는 비밀번호가 올바르지 않습니다.'}, status=401)
 
     except Exception as e:
         print(f"Error during login: {str(e)}")
