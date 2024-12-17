@@ -58,12 +58,26 @@ function createPostCard(post) {
     const userTextInfo = document.createElement('div');
     userTextInfo.className = 'user-text-info';
     
+    // 사용자 이름과 공식 계정 마크를 포함할 컨테이너
+    const usernameContainer = document.createElement('div');
+    usernameContainer.className = 'username-container';
+    
     // 사용자 이름 표시
     const usernameSpan = document.createElement('span');
     usernameSpan.className = 'username';
     usernameSpan.textContent = `@${post.username}`;
+    usernameContainer.appendChild(usernameSpan);
     
-    userTextInfo.appendChild(usernameSpan);
+    // 공식 계정 마크 추가 (is_official이 1인 경우)
+    if (post.is_official) {
+        const officialMark = document.createElement('img');
+        officialMark.src = '/static/img/mark.png';
+        officialMark.alt = 'Official Account';
+        officialMark.className = 'official-mark';
+        usernameContainer.appendChild(officialMark);
+    }
+    
+    userTextInfo.appendChild(usernameContainer);
     
     userInfoContainer.appendChild(userImage);
     userInfoContainer.appendChild(userTextInfo);

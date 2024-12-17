@@ -372,7 +372,8 @@ def get_feed_posts(request):
                 fd.`desc`, 
                 ui.username,
                 ui.user_id,  
-                COALESCE(ui.profile_image, '') as profile_image,  
+                COALESCE(ui.profile_image, '') as profile_image,
+                ui.is_official,
                 rm.file_name,
                 f.like_count,
                 f.feed_type
