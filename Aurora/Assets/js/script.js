@@ -2,6 +2,11 @@
 function getImageUrl(imagePath, isStatic = false) {
     if (!imagePath) return '/static/img/default_post.png';
     
+    // URL이 이미 완전한 경로인 경우 그대로 반환
+    if (imagePath.startsWith('/media/') || imagePath.startsWith('/static/')) {
+        return imagePath;
+    }
+    
     // 정적 이미지인 경우 static 경로 사용  
     if (isStatic) {
         return `/static/img/${imagePath}`;
@@ -31,10 +36,17 @@ function getTimeAgo(dateString) {
 
 // 포스트 카드 생성 함수
 function createPostCard(post) {
-    console.log("Post object:", post);  // post 객체의 내용을 확인
+    // 디버깅을 위한 로그 추가
+    console.log("Creating post card for:", {
+        username: post.username,
+        is_official: post.is_official,
+        user_id: post.user_id,
+        typeof_is_official: typeof post.is_official
+    });
+
     const card = document.createElement('div');
     card.className = 'post-card';
-    card.dataset.userId = post.user_id;  // user_id를 data-user-id 속성으로 추가
+    card.dataset.userId = post.user_id;
 
     
     // 헤더 영역 생성 (사용자 정보 + 좋아요)
@@ -47,11 +59,7 @@ function createPostCard(post) {
     
     // 프로필 이미지 로딩 수정
     const userImage = document.createElement('img');
-    if (post.profile_image && post.profile_image.trim() !== "") {
-        userImage.src = `/media/${post.profile_image}`;
-    } else {
-        userImage.src = '/static/img/default_profile.png';
-    }
+    userImage.src = post.profile_image || '/static/img/default_profile.png';
     userImage.alt = 'User';
     userImage.className = 'user-image';
     
@@ -69,51 +77,28 @@ function createPostCard(post) {
     usernameContainer.appendChild(usernameSpan);
     
     // 공식 계정 마크 추가 (is_official이 1인 경우)
-    if (post.is_official) {
+    // tinyint를 고려하여 모든 가능한 true 케이스 처리
+    if (post.is_official === 1 || post.is_official === true || post.is_official === '1') {
+        console.log("Adding official mark for:", post.username);  // 디버깅용
         const officialMark = document.createElement('img');
-        officialMark.src = '/static/img/mark.png';
+        officialMark.src = '/static/img/official_mark.png';
         officialMark.alt = 'Official Account';
         officialMark.className = 'official-mark';
+        officialMark.style.width = '16px';
+        officialMark.style.height = '16px';
+        officialMark.style.marginLeft = '4px';
         usernameContainer.appendChild(officialMark);
     }
     
+    // DOM 구조 순서대로 조립
     userTextInfo.appendChild(usernameContainer);
-    
     userInfoContainer.appendChild(userImage);
     userInfoContainer.appendChild(userTextInfo);
-    userInfoContainer.onclick = () => {
-        const user_id = card.dataset.user_id;  // data-user-id에서 userId 가져오기
-        console.log("User ID:", user_id);  // userId가 올바르게 설정되었는지 확인
-        if (user_id) {
-            window.location.href = `/profile/${user_id}/`;  // userId 사용
-        } else {
-            console.error("User ID is undefined");  // userId가 undefined일 경우 에러 로그
-        }
-    };
-
+    headerDiv.appendChild(userInfoContainer);
+    
     // 좋아요 버튼 영역
     const likeContainer = document.createElement('div');
     likeContainer.className = 'like-container';
-    
-    const likeIcon = document.createElement('img');
-    likeIcon.src = getImageUrl(`like_${post.isLiked ? 'on' : 'off'}.png`, true);
-    likeIcon.alt = 'Like';
-    likeIcon.className = 'like-icon';
-    likeIcon.dataset.postId = post.id;
-    
-    const likeCount = document.createElement('span');
-    likeCount.className = 'like-count';
-    likeCount.textContent = post.likes || 0;
-    // 좋아요 버튼 클릭 이벤트 추가
-    likeIcon.addEventListener('click', function() {
-        const feedId = this.dataset.feedId; // 클릭한 포스트의 ID 가져오기
-        toggleLike(this, feedId); // toggleLike 함수 호출
-    });
-    
-    likeContainer.appendChild(likeIcon);
-    likeContainer.appendChild(likeCount);
-
-    headerDiv.appendChild(userInfoContainer);
     headerDiv.appendChild(likeContainer);
     
     card.appendChild(headerDiv);
@@ -138,14 +123,20 @@ function createPostCard(post) {
         if (media.extension_type === 'mp4' || media.extension_type === 'mov') {
             const video = document.createElement('video');
             video.className = 'post-video';
-            video.src = `/media/${media.file_name}`;
+            video.src = getImageUrl(media.file_name);
             video.controls = true;
             mediaWrapper.appendChild(video);
         } else {
             const img = document.createElement('img');
             img.className = 'post-image';
-            img.src = `/media/${media.file_name}`;
+            img.src = getImageUrl(media.file_name);
             img.alt = 'Post image';
+            img.onerror = () => {
+                console.log('Image load failed:', img.src);
+            };
+            img.onload = () => {
+                console.log('Image loaded successfully:', img.src);
+            };
             mediaWrapper.appendChild(img);
         }
         
@@ -328,33 +319,15 @@ document.addEventListener('DOMContentLoaded', function() {
     const feed = document.querySelector('.feed');
     // 서버에서 피드 게시물 가져오기
     fetch('/api/feed-posts')
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
-            return response.json();
-        })
+        .then(response => response.json())
         .then(data => {
-            // 서버에서 받은 데이터로 포스트 매핑
-            let posts = data.posts.map(post => ({
-                id: post.id,
-                media_files: post.media_files || [],
-                content: post.content,
-                userImage: post.userImage || 'default_profile.png',
-                username: post.username,
-                date: post.date,
-                like_count: post.like_count || 0,
-                isLiked: false,
-                desc: post.desc,
-            }));
-
-            // 포스트 배열을 랜덤하게 섞기
-            posts = posts.sort(() => Math.random() - 0.5);
-
-            // 섞인 포스트 배열로 피드 생성
-            posts.forEach(post => {
+            console.log('Received posts:', data.posts);  // 받은 데이터 확인
+            
+            data.posts.forEach(post => {
                 const postCard = createPostCard(post);
+                console.log('Created post card:', postCard);  // 생성된 카드 확인
                 feed.appendChild(postCard);
+                console.log('Post card added to feed');  // DOM 추가 확인
             });
         })
         .catch(error => {
