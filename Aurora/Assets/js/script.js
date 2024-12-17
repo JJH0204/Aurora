@@ -90,6 +90,11 @@ function createPostCard(post) {
     const likeCount = document.createElement('span');
     likeCount.className = 'like-count';
     likeCount.textContent = post.likes || 0;
+    // 좋아요 버튼 클릭 이벤트 추가
+    likeIcon.addEventListener('click', function() {
+        const postId = this.dataset.postId; // 클릭한 포스트의 ID 가져오기
+        toggleLike(this, postId); // toggleLike 함수 호출
+    });
     
     likeContainer.appendChild(likeIcon);
     likeContainer.appendChild(likeCount);
@@ -278,11 +283,11 @@ function toggleLike(element, feedId) {
                         id: post.id,
                         media_files: post.media_files || [],
                         content: post.content,
-                        userImage: post.userImage || 'default_profile.png',
+                        profile_image: post.profile_image || 'default_profile.png',
                         username: post.username,
                         user_id: post.user_id,
                         date: post.date ? formatDate(post.date) : '날짜 없음',
-                        likes: post.likes || 0,
+                        like_count: post.like_count || 0,
                         isLiked: likedPostIds.includes(post.id),
                     }));
 
