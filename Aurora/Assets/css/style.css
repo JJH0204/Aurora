@@ -520,13 +520,6 @@ body {
     top: 0;
 }
 
-#searchResults div {
-    padding: 10px;
-    margin: 5px 0;
-    background: white;
-    border-radius: 8px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-}
 .no-results-message {
     background: #fff;
     border-radius: 15px;
@@ -537,6 +530,7 @@ body {
     border: 2px solid rgba(167, 139, 250, 0.3);
 }
 
+/* 검색 결과의 게시물도 기존 .post-card와 동일한 스타일 적용 */
 #searchResults .post-card {
     background: #fff;
     border-radius: 15px;
@@ -546,27 +540,12 @@ body {
     border: 2px solid rgba(167, 139, 250, 0.3);
 }
 
-#searchResults .media-slider {
-    position: relative;
+/* 검색 결과의 미디어도 기존과 동일한 스타일 적용 */
+#searchResults .media-slider,
+#searchResults .post-image,
+#searchResults .post-video {
     width: 100%;
-    overflow: hidden;
+    height: 100%;
+    object-fit: contain;
     background: #000;
-    aspect-ratio: 16/9;
-}
-
-#searchResults .media-container {
-    display: flex;
-    transition: transform 0.3s ease;
-    height: 100%;
-    width: 100%;
-}
-
-#searchResults .media-wrapper {
-    flex: 0 0 100%;
-    width: 100%;
-    height: 100%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    position: relative;
 }
