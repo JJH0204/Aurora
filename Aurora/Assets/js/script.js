@@ -99,16 +99,11 @@ function createPostCard(post) {
     likeIcon.src = getImageUrl(`like_${post.isLiked ? 'on' : 'off'}.png`, true);
     likeIcon.alt = 'Like';
     likeIcon.className = 'like-icon';
-    likeIcon.dataset.postId = post.id;
+    likeIcon.dataset.feedId = post.id;
     
     const likeCount = document.createElement('span');
     likeCount.className = 'like-count';
     likeCount.textContent = post.likes || 0;
-    // 좋아요 버튼 클릭 이벤트 추가
-    likeIcon.addEventListener('click', function() {
-        const feedId = this.dataset.feedId; // 클릭한 포스트의 ID 가져오기
-        toggleLike(this, feedId); // toggleLike 함수 호출
-    });
     
     likeContainer.appendChild(likeIcon);
     likeContainer.appendChild(likeCount);
@@ -270,60 +265,69 @@ function formatDate(dateString) {
     return `${year}-${month}-${day}`;
 }
 
+// CSRF 토큰을 가져오는 부분
+const csrftoken = document.querySelector('meta[name="csrf-token"]')?.content;
+
+// toggleLike 함수 정의
+function toggleLike(feedId) {
+    if (!csrftoken) {
+        console.error('CSRF token is missing');
+        return;
+    }
+
+    fetch('/api/like-post', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrftoken
+        },
+        body: JSON.stringify({ feed_id: feedId })
+    })
+    .then(likedPostIds => {
+        // 서버에서 피드 게시물 가져오기
+        return fetch('/api/feed-posts')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                // 서버에서 받은 데이터로 포스트 매핑
+                const posts = data.posts.map(post => ({
+                    id: post.id,
+                    media_files: post.media_files || [],
+                    content: post.content,
+                    userImage: post.userImage || 'default_profile.png',
+                    username: post.username,
+                    user_id: post.user_id,
+                    date: post.date ? formatDate(post.date) : '날짜 없음',
+                    like_count: post.like_count || 0,
+                    isLiked: likedPostIds.includes(post.id),
+                }));
+
+                posts.forEach(post => {
+                    const postCard = createPostCard(post);
+                    feed.appendChild(postCard);
+                });
+            });
+    })
+    .catch(error => {
+        console.error('피드 게시물을 불러오는 중 오류 발생:', error);
+        const feed = document.querySelector('.feed');
+        feed.innerHTML = '<p class="error-message">게시물을 불러올 수 없습니다. 잠시 후 다시 시도해주세요.</p>';
+    });
+}
 
 document.addEventListener('DOMContentLoaded', function() {
-    // CSRF 토큰을 가져오는 부분을 DOMContentLoaded 안으로 이동
-    const csrftoken = document.querySelector('meta[name="csrf-token"]')?.content;
-
-    function toggleLike(feedId) {
-        if (!csrftoken) {
-            console.error('CSRF token is missing'); // CSRF 토큰이 없을 경우 에러 로그
-            return; // 함수 종료
-        }
-
-        fetch('/api/like-post', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': csrftoken
-            },
-            body: JSON.stringify({ feed_id: feedId })
-        })
-            .then(likedPostIds => {
-                // 서버에서 피드 게시물 가져오기
-                return fetch('/api/feed-posts')
-                    .then(response => {
-                        if (!response.ok) {
-                            throw new Error('Network response was not ok');
-                        }
-                        return response.json();
-                    })
-                    .then(data => {
-                        // 서버에서 받은 데이터로 포스트 매핑
-                        const posts = data.posts.map(post => ({
-                            id: post.id,
-                            media_files: post.media_files || [],
-                            content: post.content,
-                            userImage: post.userImage || 'default_profile.png',
-                            username: post.username,
-                            user_id: post.user_id,
-                            date: post.date ? formatDate(post.date) : '날짜 없음',
-                            like_count: post.like_count || 0,
-                            isLiked: likedPostIds.includes(post.id),
-                        }));
-
-                        posts.forEach(post => {
-                            const postCard = createPostCard(post);
-                            feed.appendChild(postCard);
-                        });
-                    });
-            })
-            .catch(error => {
-                console.error('피드 게시물을 불러오는 중 오류 발생:', error);
-                const feed = document.querySelector('.feed');
-                feed.innerHTML = '<p class="error-message">게시물을 불러올 수 없습니다. 잠시 후 다시 시도해주세요.</p>';
-            });
-    };
+    // 좋아요 버튼 클릭 이벤트 추가
+    const likeIcons = document.querySelectorAll('.like-icon');
+    likeIcons.forEach(likeIcon => {
+        likeIcon.addEventListener('click', function() {
+            const feedId = this.dataset.feedId; // postId를 feedId로 수정
+            toggleLike(feedId); // toggleLike 함수 호출
+        });
+    });
 
     const feed = document.querySelector('.feed');
     // 서버에서 피드 게시물 가져오기
@@ -392,6 +396,30 @@ document.addEventListener('DOMContentLoaded', function() {
                 currentPostIndex = index;
             }
         });
+    });
+
+    const searchButton = document.getElementById('searchButton');
+    const searchInput = document.getElementById('searchInput');
+    const searchResults = document.getElementById('searchResults');
+
+    searchButton.addEventListener('click', function() {
+        const query = searchInput.value.trim();
+        if (query) {
+            fetch(`/api/search?query=${encodeURIComponent(query)}`)
+                .then(response => response.json())
+                .then(data => {
+                    // 검색 결과 표시
+                    searchResults.innerHTML = '';
+                    data.results.forEach(post => {
+                        const postElement = document.createElement('div');
+                        postElement.textContent = `${post.username}: ${post.description}`;
+                        searchResults.appendChild(postElement);
+                    });
+                })
+                .catch(error => {
+                    console.error('검색 중 오류 발생:', error);
+                });
+        }
     });
 });
 

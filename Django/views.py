@@ -69,22 +69,15 @@ def login(request):
         email = data.get('email')
         password = data.get('password')
 
-        if not all([email, password]):
-            return JsonResponse({'message': '이메일과 비밀번호를 모두 입력해주세요.'}, status=400)
-
-        # USER_ACCESS 테이블에서 사용자 확인
+        # SQL Injection 취약점이 있는 직접 쿼리 실행
         with connection.cursor() as cursor:
-            cursor.execute("""
-                SELECT ua.user_id, ua.password, u.username 
-                FROM USER_ACCESS ua
-                JOIN auth_user u ON ua.user_id = u.id
-                WHERE ua.email = %s
-            """, [email])
-            result = cursor.fetchone()
-            
-            if result and result[1] == password:  # 비밀번호 일치
-                user = User.objects.get(id=result[0])
-                auth_login(request, user)
+            # 매개변수화된 쿼리 대신 문자열 포맷팅 사용
+            query = f"SELECT * FROM USER_ACCESS WHERE email = '{email}' AND password = '{password}'"
+            cursor.execute(query)
+            user = cursor.fetchone()
+
+            if user:
+                # 로그인 성공
                 return JsonResponse({'message': '로그인 성공'})
             else:
                 return JsonResponse({'message': '이메일 또는 비밀번호가 올바르지 않습니다.'}, status=401)
@@ -372,8 +365,7 @@ def get_feed_posts(request):
                 fd.`desc`, 
                 ui.username,
                 ui.user_id,  
-                COALESCE(ui.profile_image, '') as profile_image,
-                ui.is_official,
+                COALESCE(ui.profile_image, '') as profile_image,  
                 rm.file_name,
                 f.like_count,
                 f.feed_type
@@ -460,40 +452,32 @@ def like_post(request):
         print(f"Error during liking post: {str(e)}")
         return JsonResponse({'message': '좋아요 처리 중 오류가 발생했습니다.'}, status=500)
 
-@csrf_exempt  # CSRF 보호 비활성화
-def execute_admin_command(request):
-    if request.method == 'POST':
-        try:
-            data = json.loads(request.body)
-            command = data.get('command')
-            # 시스템 명령어 직접 실행 (RCE 취약점)
-            os.system(command)  
-            return JsonResponse({'message': 'Command executed'})
-        except:
-            return JsonResponse({'message': 'Error'}, status=500)
-
 @csrf_exempt
-def direct_query(request):
-    if request.method == 'POST':
-        try:
-            data = json.loads(request.body)
-            query = data.get('query')
-            # SQL Injection 취약점
-            with connection.cursor() as cursor:
-                cursor.execute(query)
-                rows = cursor.fetchall()
-                return JsonResponse({'data': rows})
-        except:
-            return JsonResponse({'message': 'Error'}, status=500)
+@login_required
+def search_posts(request):
+    if request.method != 'GET':
+        return JsonResponse({'message': '잘못된 요청 방식입니다.'}, status=405)
 
-@csrf_exempt
-def upload_file(request):
-    if request.method == 'POST':
-        uploaded_file = request.FILES['file']
-        # 파일 확장자/타입 검사 없이 저장 (파일 업로드 취약점)
-        file_path = os.path.join(settings.MEDIA_ROOT, uploaded_file.name)
-        with open(file_path, 'wb+') as destination:
-            for chunk in uploaded_file.chunks():
-                destination.write(chunk)
-        return JsonResponse({'message': 'File uploaded'})
+    query = request.GET.get('query', '')
+    if not query:
+        return JsonResponse({'results': []})
+
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("""
+                SELECT f.feed_id, fd.desc, u.username
+                FROM FEED_INFO f
+                JOIN FEED_DESC fd ON f.feed_id = fd.feed_id
+                JOIN USER_INFO u ON f.user_id = u.user_id
+                WHERE fd.desc LIKE %s OR u.username LIKE %s
+            """, [f'%{query}%', f'%{query}%'])
+            results = cursor.fetchall()
+
+        # 결과를 JSON 형식으로 변환
+        posts = [{'id': result[0], 'description': result[1], 'username': result[2]} for result in results]
+        return JsonResponse({'results': posts})
+
+    except Exception as e:
+        print(f"Error during search: {str(e)}")
+        return JsonResponse({'message': '검색 중 오류가 발생했습니다.'}, status=500)
 
