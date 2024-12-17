@@ -167,7 +167,7 @@
                 username: document.getElementById('username').value.trim(),
                 email: document.getElementById('email').value.trim(),
                 bio: document.getElementById('bio').value.trim(),
-                isOfficial: document.getElementById('is_official').value.trim()
+                isOfficial: document.getElementById('is_official').checked // 체크박스 상태 가져오기
             };
 
             const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
