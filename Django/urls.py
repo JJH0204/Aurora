@@ -26,6 +26,7 @@ urlpatterns = [
     path('api/feed-posts', views.get_feed_posts, name='get_feed_posts'),
     path('check-auth/', views.check_auth, name='check-auth'),
     path('api/like-post', views.like_post, name='like_post'),
+    path('api/search', views.search_posts, name='search_posts'),
 ]
 
 # Debug 모드일 때만 미디어 파일 서빙
