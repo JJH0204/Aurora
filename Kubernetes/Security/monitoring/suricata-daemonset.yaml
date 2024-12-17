@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: suricata
+  namespace: monitoring
+spec:
+  selector:
+    matchLabels:
+      app: suricata
+  template:
+    metadata:
+      labels:
+        app: suricata
+    spec:
+      initContainers:
+      - name: init-config
+        image: busybox:1.28
+        command: ['sh', '-c', 'cp /etc/suricata-config/* /etc/suricata/ && chmod 644 /etc/suricata/*']
+        volumeMounts:
+        - name: config-src
+          mountPath: /etc/suricata-config
+          readOnly: true
+        - name: config-dest
+          mountPath: /etc/suricata
+      containers:
+      - name: suricata
+        image: jasonish/suricata:latest
+        args:
+        - -c
+        - /etc/suricata/suricata.yaml
+        - -i
+        - eth0
+        securityContext:
+          capabilities:
+            add:
+            - NET_ADMIN
+            - NET_RAW
+        volumeMounts:
+        - name: config-dest
+          mountPath: /etc/suricata
+        - name: logs
+          mountPath: /var/log/suricata
+      hostNetwork: true
+      nodeSelector:
+        node-type: security
+      volumes:
+      - name: config-src
+        configMap:
+          name: suricata-config
+      - name: config-dest
+        emptyDir: {}
+      - name: logs
+        hostPath:
+          path: /var/log/suricata
+          type: DirectoryOrCreate

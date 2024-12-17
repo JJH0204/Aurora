@@ -9,6 +9,7 @@
 * [프로젝트 구조](#project-structure)
 * [프로젝트 플로우-차트](#project-flowchart)
 * [프로젝트 실행 방법](#how-to-run-project)
+* [보안 구성](#security-configuration)
 * [라이선스](#license)
 
 ## Project Overview
@@ -45,7 +46,9 @@ Django 웹 프레임워크를 기반으로 하며, MariaDB를 데이터베이스
 | Backend | ![Django](https://img.shields.io/badge/Django-5.0-green?logo=django) |
 | Database | ![MariaDB](https://img.shields.io/badge/MariaDB-10.11-blue?logo=mariadb) |
 | Container | ![Docker](https://img.shields.io/badge/Docker-Latest-blue?logo=docker) |
-| Web Server | ![Gunicorn](https://img.shields.io/badge/Gunicorn-21.2-green?logo=gunicorn) ![Whitenoise](https://img.shields.io/badge/Whitenoise-6.6-lightgrey) |
+| Web Server | ![Gunicorn](https://img.shields.io/badge/Gunicorn-21.2-green?logo=gunicorn) |
+| Security | ![ModSecurity](https://img.shields.io/badge/ModSecurity-3.0-red?logo=modsecurity) ![Suricata](https://img.shields.io/badge/Suricata-7.0-orange) ![ELK Stack](https://img.shields.io/badge/ELK_Stack-7.17-blue?logo=elastic) |
+| Orchestration | ![Kubernetes](https://img.shields.io/badge/Kubernetes-Latest-blue?logo=kubernetes) |
 
 ## project-structure
 ```
@@ -53,56 +56,88 @@ Aurora/
 ├── Aurora/               # → Django 프로젝트 메인 디렉토리(프런트)
 ├── Django/               # → Django 애플리케이션 디렉토리(서버)
 ├── Maria/                # → MariaDB 관련 설정(데이터베이스)
+├── Kubernetes/           # → Kubernetes 배포 설정
+│   ├── Security/        # → 보안 모니터링 구성
+│   │   ├── elk/        # → ELK 스택 설정
+│   │   └── monitoring/ # → Suricata, Filebeat 설정
 ├── .github/              # → GitHub 워크플로우 설정
 ├── manage.py             # → Django 프로젝트 관리
 ├── requirements.txt      # → Python 의존성
-├── Dockerfile             # → Docker 이미지 정의
-├── docker-entrypoint.sh   # → Docker 진입점 스크립트
-├── run.bat                # → Windows 실행 스크립트
-└── run.sh                 # → Linux/Mac 실행 스크립트
+├── Dockerfile           # → Docker 이미지 정의
+├── docker-entrypoint.sh # → Docker 진입점 스크립트
+├── run.bat              # → Windows 실행 스크립트
+└── run.sh               # → Linux/Mac 실행 스크립트
 ```
 
 ## how-to-run-project
-- 간편 실행 방법
+### 1. 로컬 개발 환경
 ```bash
 $ git clone <repository-url>
 $ cd Aurora
-$ ./run.bat 
-# 또는 ./run.sh (환경에 맞게)
+$ ./run.bat  # Windows
+# 또는 ./run.sh (Linux/Mac)
 ```
 
-- docker hub 이미지 실행
+### 2. Docker 환경
 ```bash
 # 기본 실행
 $ docker run -d --name aurora -p 80:80 krjaeh0/aurora:latest
 
-# (선택사항) 소스코드 변경사항을 실시간으로 반영하려면:
+# (선택사항) 소스코드 실시간 반영
 $ docker run -d --name aurora -p 80:80 -v "%cd%/Aurora:/app/Aurora" krjaeh0/aurora:latest
 ```
 
-3. 접속
-- 웹 브라우저에서 http://localhost 또는 http://127.0.0.1 접속
+### 3. Kubernetes 환경
+```bash
+# 1. 기본 애플리케이션 배포
+$ cd Kubernetes
+$ ./deploy.bat  # Windows
+# 또는 ./deploy.sh (Linux/Mac)
+
+# 2. 보안 모니터링 시스템 배포
+$ cd Security
+$ ./deploy-security.bat  # Windows
+# 또는 ./deploy-security.sh (Linux/Mac)
+```
+
+### 4. 접속 정보
+- 웹 애플리케이션: http://localhost
 - 관리자 페이지: http://localhost/admin
-- 
+- Kibana 대시보드: http://localhost:30601
 
-4. WAF 테스트
+## Security Configuration
+
+### 1. WAF (ModSecurity)
+- 웹 애플리케이션 방화벽이 기본으로 활성화되어 있음
+- OWASP Core Rule Set (CRS) 적용
+- 로그 확인:
 ```bash
+# Docker 환경
 docker exec aurora tail -f /var/log/modsec_audit.log
-# 명령어를 실행한 후 받은 정보를 확인
-# http://localhost/?id=1' OR '1'='1
-# http://localhost/?test=<script>alert('xss')</script>
+
+# Kubernetes 환경
+kubectl exec <pod-name> -- tail -f /var/log/modsec_audit.log
 ```
 
-5. Kubernetes 테스트 WAF
-```bash
-# pod 명칭 확인
-kubectl get pods 
-kubectl exec <포드 이름> -- tail -f /var/log/modsec_audit.log
-```
-## license
-이 프로젝트는 MIT 라이선스 하에 배포됩니다.  
-자세한 내용은 [LICENSE](LICENSE) 파일을 참조하세요.
+### 2. 네트워크 모니터링 (Suricata)
+- 네트워크 침입 탐지/방지 시스템 (IDS/IPS)
+- 실시간 트래픽 분석 및 위협 탐지
+- 모든 보안 이벤트는 ELK 스택으로 전송됨
 
-- 자유로운 사용, 수정, 배포 가능
-- 상업적 이용 가능
-- 원저작자 표시 필요
+### 3. 로그 수집 및 분석 (ELK Stack)
+- Elasticsearch: 로그 저장 및 검색
+- Logstash: 로그 수집 및 변환
+- Kibana: 로그 시각화 및 분석
+- 접속 정보:
+  - URL: http://localhost:30601
+  - 사용자: elastic
+  - 비밀번호: 환경 변수에서 설정 (기본값: `choa0306@@`)
+
+### 4. 보안 모범 사례
+- 모든 비밀번호와 API 키는 Kubernetes Secrets로 관리
+- 컨테이너는 최소 권한 원칙으로 실행
+- 정기적인 보안 업데이트 및 패치 적용
+- 모든 통신은 TLS/SSL로 암호화
+
+## License
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

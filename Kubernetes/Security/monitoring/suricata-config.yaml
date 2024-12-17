@@ -1,0 +1,68 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: suricata-config
+  namespace: monitoring
+data:
+  suricata.yaml: |
+    %YAML 1.1
+    ---
+    # Suricata configuration file
+
+    vars:
+      address-groups:
+        HOME_NET: "[192.168.0.0/16,10.0.0.0/8,172.16.0.0/12]"
+        EXTERNAL_NET: "!$HOME_NET"
+      port-groups:
+        HTTP_PORTS: "80,8080,30080,30601"
+
+    af-packet:
+      - interface: eth0
+        cluster-id: 99
+        cluster-type: cluster_flow
+        defrag: yes
+
+    detect-engine:
+      - rule-reload: true
+      - custom-rules:
+          - 'alert http $EXTERNAL_NET any -> $HOME_NET 30601 (msg:"Possible SQL Injection Attack"; content:"%27"; http_uri; sid:1000001; rev:1;)'
+          - 'alert http $EXTERNAL_NET any -> $HOME_NET 30601 (msg:"Possible XSS Attack"; content:"<script>"; nocase; http_uri; sid:1000002; rev:1;)'
+          - 'alert http $EXTERNAL_NET any -> $HOME_NET 30601 (msg:"Directory Traversal Attack"; content:"../"; http_uri; sid:1000003; rev:1;)'
+
+    outputs:
+      - fast:
+          enabled: yes
+          filename: /var/log/suricata/fast.log
+          append: yes
+      - eve-log:
+          enabled: yes
+          filename: /var/log/suricata/eve.json
+          append: yes
+          types:
+            - alert:
+                payload: yes
+                payload-printable: yes
+                packet: yes
+                http: yes
+                tls: yes
+            - http:
+                extended: yes
+            - dns
+            - tls
+            - flow
+
+    app-layer:
+      protocols:
+        tls:
+          enabled: yes
+        http:
+          enabled: yes
+          custom-ports: [30601]
+        dns:
+          enabled: yes
+
+    logging:
+      default-log-level: info
+      outputs:
+        - console:
+            enabled: yes
