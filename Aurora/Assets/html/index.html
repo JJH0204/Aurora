@@ -13,8 +13,9 @@
         <!-- Header Section -->
         <div class="header">
             <div class="search-container">
-                <input type="text" class="form-control search" id="searchInput" placeholder="Aurora">
-                <img src="{% static 'img/search.png' %}" alt="Search" id="searchButton">
+                <input type="text" class="form-control search" placeholder="Aurora">
+                
+                <img src="{% static 'img/search.png' %}" alt="Search">
             </div>
             {% if user.is_authenticated %}
                 <button class="login-btn" onclick="confirmLogout()">Logout</button>
@@ -37,8 +38,6 @@
 
         <div class="container-fluid">
             <div class="main-content">
-                <!-- 검색 결과를 표시할 div 추가 -->
-                <div id="searchResults"></div>
                 <div class="feed">
                     <!-- 여기서 JavaScript로 포스트가 동적으로 생성됩니다 -->
                 </div>
