@@ -68,45 +68,26 @@ def login(request):
         data = json.loads(request.body)
         email = data.get('email')
         password = data.get('password')
-        use_unsafe = data.get('unsafe', False)  # SQL Injection 용 플래그
 
         if not all([email, password]):
             return JsonResponse({'message': '이메일과 비밀번호를 모두 입력해주세요.'}, status=400)
 
-        if use_unsafe:
-            # SQL Injection에 취약한 로그인 처리
-            with connection.cursor() as cursor:
-                # 안전하지 않은 쿼리 실행
-                unsafe_query = f"""
-                    SELECT ua.user_id, ua.password, u.username 
-                    FROM USER_ACCESS ua
-                    JOIN auth_user u ON ua.user_id = u.id
-                    WHERE ua.email = '{email}' AND ua.password = '{password}'
-                """
-                cursor.execute(unsafe_query)
-                result = cursor.fetchone()
-                
-                if result:
-                    user = User.objects.get(id=result[0])
-                    auth_login(request, user)
-                    return JsonResponse({'message': '로그인 성공'})
-        else:
-            # 기존의 안전한 로그인 처리
-            with connection.cursor() as cursor:
-                cursor.execute("""
-                    SELECT ua.user_id, ua.password, u.username 
-                    FROM USER_ACCESS ua
-                    JOIN auth_user u ON ua.user_id = u.id
-                    WHERE ua.email = %s
-                """, [email])
-                result = cursor.fetchone()
-                
-                if result and result[1] == password:
-                    user = User.objects.get(id=result[0])
-                    auth_login(request, user)
-                    return JsonResponse({'message': '로그인 성공'})
-
-        return JsonResponse({'message': '이메일 또는 비밀번호가 올바르지 않습니다.'}, status=401)
+        # USER_ACCESS 테이블에서 사용자 확인
+        with connection.cursor() as cursor:
+            cursor.execute("""
+                SELECT ua.user_id, ua.password, u.username 
+                FROM USER_ACCESS ua
+                JOIN auth_user u ON ua.user_id = u.id
+                WHERE ua.email = %s
+            """, [email])
+            result = cursor.fetchone()
+            
+            if result and result[1] == password:  # 비밀번호 일치
+                user = User.objects.get(id=result[0])
+                auth_login(request, user)
+                return JsonResponse({'message': '로그인 성공'})
+            else:
+                return JsonResponse({'message': '이메일 또는 비밀번호가 올바르지 않습니다.'}, status=401)
 
     except Exception as e:
         print(f"Error during login: {str(e)}")
