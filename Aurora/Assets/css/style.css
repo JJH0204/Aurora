@@ -508,3 +508,65 @@ body {
     object-fit: contain;
     margin-left: 4px;
 }
+#searchResults {
+    height: auto;
+    background: transparent;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding: 20px 0;
+    transition: transform 0.5s ease;
+    position: relative;
+    top: 0;
+}
+
+#searchResults div {
+    padding: 10px;
+    margin: 5px 0;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+.no-results-message {
+    background: #fff;
+    border-radius: 15px;
+    padding: 20px;
+    text-align: center;
+    color: #6c7293;
+    margin: 20px 0;
+    border: 2px solid rgba(167, 139, 250, 0.3);
+}
+
+#searchResults .post-card {
+    background: #fff;
+    border-radius: 15px;
+    margin-bottom: 20px;
+    overflow: hidden;
+    box-shadow: none;
+    border: 2px solid rgba(167, 139, 250, 0.3);
+}
+
+#searchResults .media-slider {
+    position: relative;
+    width: 100%;
+    overflow: hidden;
+    background: #000;
+    aspect-ratio: 16/9;
+}
+
+#searchResults .media-container {
+    display: flex;
+    transition: transform 0.3s ease;
+    height: 100%;
+    width: 100%;
+}
+
+#searchResults .media-wrapper {
+    flex: 0 0 100%;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+}
