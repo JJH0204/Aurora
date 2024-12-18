@@ -441,4 +441,86 @@ document.querySelectorAll('.profile-image, .username').forEach(element => {
         }
     });
 });
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.querySelector('.search');
+    const searchResults = document.getElementById('searchResults');
 
+    // 검색 기능 구현
+    searchInput.addEventListener('input', function() {
+        const query = this.value.trim();
+        
+        if (query) {
+            fetch(`/api/search?query=${encodeURIComponent(query)}`)
+                .then(response => response.json())
+                .then(data => {
+                    // 기존 피드 숨기기
+                    const feed = document.querySelector('.feed');
+                    feed.style.display = 'none';
+                    
+                    // 검색 결과 표시
+                    searchResults.innerHTML = '';
+                    
+                    // 검색 결과가 없는 경우
+                    if (!data.results || data.results.length === 0) {
+                        const noResultsMsg = document.createElement('div');
+                        noResultsMsg.className = 'no-results-message';
+                        noResultsMsg.textContent = '일치하는 관련 게시물이 없습니다.';
+                        searchResults.appendChild(noResultsMsg);
+                        return;
+                    }
+                    // 검색 결과가 있는 경우 - createPostCard 함수를 사용하여 게시물 형태로 표시
+                    data.results.forEach(post => {
+                        const postCard = createPostCard({
+                            id: post.id,
+                            username: post.username,
+                            desc: post.description,
+                            media_files: post.media_files || [],
+                            date: post.date,
+                            like_count: post.like_count || 0,
+                            isLiked: post.isLiked || false,
+                            user_id: post.user_id
+                        });
+                        searchResults.appendChild(postCard);
+                    });
+                })
+                .catch(error => {
+                    console.error('검색 중 오류 발생:', error);
+                    searchResults.innerHTML = '<div class="error-message">검색 중 오류가 발생했습니다.</div>';
+                });
+        } else {
+            // 검색어가 없는 경우 기존 피드 표시
+            const feed = document.querySelector('.feed');
+            feed.style.display = 'block';
+            searchResults.innerHTML = '';
+        }
+    });
+});
+    // 엔터키로도 검색 가능하도록
+    searchInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            searchButton.click();
+        }
+    });
+
+
+function updateImagePreview() {
+    const input = document.getElementById('imageInput');
+    const preview = document.querySelector('.image-preview');
+    const initialUpload = document.querySelector('.initial-upload');
+    const placeholder = preview.querySelector('.placeholder');
+    if (input.files && input.files[0]) {
+        // 초기 업로드 버튼 숨기기
+        initialUpload.style.display = 'none';
+        // 이미지 프리뷰 영역 보이기
+        preview.style.display = 'flex';
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            placeholder.style.display = 'none';
+            // 새로운 이미지 추가
+            const img = document.createElement('img');
+            img.src = e.target.result;
+            preview.appendChild(img);
+        }
+        reader.readAsDataURL(input.files[0]);
+    }
+}
