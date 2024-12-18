@@ -37,17 +37,17 @@ function getTimeAgo(dateString) {
 // 포스트 카드 생성 함수
 function createPostCard(post) {
     // 디버깅을 위한 로그 추가
-    console.log("Creating post card for:", {
-        username: post.username,
-        is_official: post.is_official,
-        user_id: post.user_id,
-        typeof_is_official: typeof post.is_official
-    });
+    console.log("Creating post card for:", post);
+
+    if (!post) {
+        console.error("Post data is undefined");
+        return document.createElement('div'); // 빈 div 반환
+    }
 
     const postCard = document.createElement('div');
     postCard.className = 'post-card';
-    postCard.dataset.userId = post.user_id;
-    postCard.dataset.isOfficial = post.is_official;  // is_official 설정
+    postCard.dataset.userId = post.user_id || '';
+    postCard.dataset.isOfficial = post.is_official || false;
 
     // 헤더 영역 생성 (사용자 정보 + 좋아요)
     const headerDiv = document.createElement('div');
@@ -367,21 +367,32 @@ document.addEventListener('DOMContentLoaded', function () {
     const feed = document.querySelector('.feed');
     // 서버에서 피드 게시물 가져오기
     fetch('/api/feed-posts')
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
         .then(data => {
-            console.log('Received posts:', data.posts);  // 받은 데이터 확인
+            console.log('Received data:', data); // 디버깅용 로그
+            
+            if (!data || !data.posts || !Array.isArray(data.posts)) {
+                throw new Error('Invalid data format received from server');
+            }
+
+            if (data.posts.length === 0) {
+                feed.innerHTML = '<p>표시할 게시물이 없습니다.</p>';
+                return;
+            }
 
             data.posts.forEach(post => {
                 const postCard = createPostCard(post);
-                console.log('Created post card:', postCard);  // 생성된 카드 확인
                 feed.appendChild(postCard);
-                console.log('Post card added to feed');  // DOM 추가 확인
             });
         })
         .catch(error => {
             console.error('피드 게시물을 불러오는 중 오류 발생:', error);
-            const feed = document.querySelector('.feed');
-            feed.innerHTML = `<p>게시물을 불러올 수 없습니다: ${error.message}</p>`;
+            feed.innerHTML = `<p class="error-message">게시물을 불러올 수 없습니다: ${error.message}</p>`;
         });
 
     // Arrow 버튼 클릭 이벤트 추가

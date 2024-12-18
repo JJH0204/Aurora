@@ -386,39 +386,61 @@ def update_profile(request):
 
 @csrf_exempt
 def get_feed_posts(request):
-    with connection.cursor() as cursor:
-        cursor.execute("""
-            WITH RankedMedia AS (
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("""
+                WITH RankedMedia AS (
+                    SELECT 
+                        mf.feed_id,
+                        JSON_ARRAYAGG(
+                            JSON_OBJECT(
+                                'file_name', mf.file_name,
+                                'extension_type', mf.extension_type,
+                                'media_number', mf.media_number
+                            )
+                        ) as media_files
+                    FROM MEDIA_FILE mf
+                    GROUP BY mf.feed_id
+                )
                 SELECT 
-                    mf.feed_id,
-                    mf.file_name,
-                    mf.extension_type,
-                    ROW_NUMBER() OVER (PARTITION BY mf.feed_id ORDER BY mf.media_number) as rn
-                FROM MEDIA_FILE mf
-            )
-            SELECT 
-                f.feed_id, 
-                fd.`desc`, 
-                ui.username,
-                ui.user_id,  
-                COALESCE(ui.profile_image, '') as profile_image,
-                ui.is_official,
-                rm.file_name,
-                f.like_count,
-                f.feed_type,
-                CASE WHEN fl.user_id IS NOT NULL THEN TRUE ELSE FALSE END as is_liked
-            FROM FEED_INFO f
-            LEFT JOIN FEED_DESC fd ON f.feed_id = fd.feed_id
-            LEFT JOIN USER_INFO ui ON f.user_id = ui.user_id
-            LEFT JOIN RankedMedia rm ON f.feed_id = rm.feed_id AND rm.rn = 1
-            LEFT JOIN FEED_LIKE fl ON f.feed_id = fl.feed_id AND fl.user_id = %s
-            ORDER BY RAND();
-        """, [request.user.id if request.user.is_authenticated else None])
-        
-        columns = [col[0] for col in cursor.description]
-        feeds = [dict(zip(columns, row)) for row in cursor.fetchall()]
-        
-        return JsonResponse({'posts': feeds}, json_dumps_params={'ensure_ascii': False})
+                    f.feed_id, 
+                    fd.`desc`, 
+                    ui.username,
+                    ui.user_id,  
+                    COALESCE(ui.profile_image, '') as profile_image,
+                    ui.is_official,
+                    f.like_count,
+                    f.feed_type,
+                    CASE WHEN fl.user_id IS NOT NULL THEN TRUE ELSE FALSE END as is_liked,
+                    rm.media_files,
+                    DATE_FORMAT(fl.like_date, '%%Y-%%m-%%d %%H:%%i:%%s') as date
+                FROM FEED_INFO f
+                LEFT JOIN FEED_DESC fd ON f.feed_id = fd.feed_id
+                LEFT JOIN USER_INFO ui ON f.user_id = ui.user_id
+                LEFT JOIN RankedMedia rm ON f.feed_id = rm.feed_id
+                LEFT JOIN FEED_LIKE fl ON f.feed_id = fl.feed_id AND fl.user_id = %s
+                ORDER BY RAND();
+            """, [request.user.id if request.user.is_authenticated else None])
+            
+            columns = [col[0] for col in cursor.description]
+            feeds = []
+            for row in cursor.fetchall():
+                feed_dict = dict(zip(columns, row))
+                # JSON 문자열을 파이썬 객체로 변환
+                try:
+                    feed_dict['media_files'] = json.loads(feed_dict['media_files']) if feed_dict['media_files'] else []
+                except:
+                    feed_dict['media_files'] = []
+                feeds.append(feed_dict)
+
+            print("Sending feeds:", feeds)  # 디버깅용
+            return JsonResponse({'posts': feeds}, json_dumps_params={'ensure_ascii': False})
+    except Exception as e:
+        print(f"Error in get_feed_posts: {str(e)}")  # 디버깅용
+        return JsonResponse({
+            'error': str(e),
+            'posts': []
+        }, status=500)
 
 
 @csrf_exempt
