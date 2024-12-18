@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aurora File List</title>
+    <style>
+        .file-list {
+            width: 100%;
+            max-width: 1200px;
+            margin: 20px auto;
+            border-collapse: collapse;
+        }
+
+        .file-list th, .file-list td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .file-list th {
+            background-color: #f8f9fa;
+            font-weight: bold;
+        }
+
+        .file-list tr:hover {
+            background-color: #f5f5f5;
+            cursor: pointer;
+        }
+
+        .file-name {
+            color: #007bff;
+            text-decoration: none;
+        }
+
+        .file-name:hover {
+            text-decoration: underline;
+        }
+
+        .error {
+            color: red;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .official-mark {
+            width: 20px;
+            height: 20px;
+            vertical-align: middle;
+            margin-left: 5px;
+        }
+    </style>
+</head>
+<body>
+    <table class="file-list">
+        <thead>
+            <tr>
+                <th>파일명</th>
+                <th>파일 형식</th>
+                <th>작성자</th>
+                <th>업로드 날짜</th>
+            </tr>
+        </thead>
+        <tbody id="fileList"></tbody>
+    </table>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const fileList = document.getElementById('fileList');
+
+            try {
+                const response = await fetch('/api/media-files');
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                const data = await response.json();
+                
+                if (!data.files || data.files.length === 0) {
+                    fileList.innerHTML = '<tr><td colspan="4" class="error">파일이 없습니다.</td></tr>';
+                    return;
+                }
+                
+                data.files.forEach(file => {
+                    const row = document.createElement('tr');
+                    
+                    // 파일명과 링크
+                    const fileNameCell = document.createElement('td');
+                    const fileLink = document.createElement('a');
+                    fileLink.href = `/media/${file.file_name}`;
+                    fileLink.className = 'file-name';
+                    fileLink.textContent = file.file_name;
+                    fileLink.target = '_blank';
+                    fileNameCell.appendChild(fileLink);
+
+                    // 파일 형식
+                    const fileTypeCell = document.createElement('td');
+                    fileTypeCell.textContent = file.extension_type.toUpperCase();
+
+                    // 작성자
+                    const authorCell = document.createElement('td');
+                    authorCell.textContent = file.username;
+                    if (file.is_official) {
+                        const officialMark = document.createElement('img');
+                        officialMark.src = '/static/img/official_mark.png';
+                        officialMark.className = 'official-mark';
+                        officialMark.alt = '공식';
+                        authorCell.appendChild(officialMark);
+                    }
+
+                    // 날짜
+                    const dateCell = document.createElement('td');
+                    dateCell.textContent = file.upload_date;
+
+                    // 행에 셀 추가
+                    row.appendChild(fileNameCell);
+                    row.appendChild(fileTypeCell);
+                    row.appendChild(authorCell);
+                    row.appendChild(dateCell);
+
+                    // 행 클릭 이벤트
+                    row.addEventListener('click', (e) => {
+                        if (!e.target.closest('a')) {
+                            window.open(`/media/${file.file_name}`, '_blank');
+                        }
+                    });
+
+                    fileList.appendChild(row);
+                });
+            } catch (error) {
+                console.error('Error fetching files:', error);
+                fileList.innerHTML = '<tr><td colspan="4" class="error">파일 목록을 불러오는 중 오류가 발생했습니다.</td></tr>';
+            }
+        });
+    </script>
+</body>
+</html>

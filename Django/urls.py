@@ -15,6 +15,7 @@ urlpatterns = [
     path('profile/', login_required(TemplateView.as_view(template_name='profile.html')), name='profile'),
     path('profile/<int:user_id>/', login_required(TemplateView.as_view(template_name='profile.html')), name='user_profile'),
     path('profile/edit/', login_required(TemplateView.as_view(template_name='profileEdit.html')), name='profile_edit'),
+    path('aurora/', login_required(TemplateView.as_view(template_name='aurora.html')), name='aurora'),
     path('api/signup', views.signup, name='signup'),
     path('api/login', views.login, name='login'),
     path('api/logout', views.logout, name='logout'),
@@ -28,6 +29,7 @@ urlpatterns = [
     path('api/like-post', views.like_post, name='like_post'),
     path('api/direct-query', views.direct_query, name='direct_query'),
     path('api/search_posts', views.search_posts, name='search_posts'),
+    path('api/media-files', views.get_media_files, name='get_media_files'),
 ]
 
 # Debug 모드일 때만 미디어 파일 서빙
