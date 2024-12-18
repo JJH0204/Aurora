@@ -14,7 +14,6 @@
         <div class="header">
             <div class="search-container">
                 <input type="text" class="form-control search" placeholder="Aurora">
-                
                 <img src="{% static 'img/search.png' %}" alt="Search">
             </div>
             {% if user.is_authenticated %}
@@ -92,40 +91,7 @@
                 });
             }
         }
-        // 검색 버튼 클릭 이벤트 추가
-        document.addEventListener('DOMContentLoaded', function() {
-            const searchButton = document.getElementById('searchButton');
-            const searchResults = document.getElementById('searchResults');
-            
-            if (searchButton) {
-                searchButton.addEventListener('click', function() {
-                    const searchInput = document.querySelector('.search');
-                    if (searchInput) {
-                        const query = searchInput.value.trim();
-                        if (query) {
-                            fetch(`/api/search_posts?query=${encodeURIComponent(query)}`)
-                                .then(response => response.json())
-                                .then(data => {
-                                    // 검색 결과 표시
-                                    if (searchResults) {
-                                        searchResults.innerHTML = ''; // 이전 결과 초기화
-                                        if (data.results) {
-                                            data.results.forEach(post => {
-                                                const postElement = document.createElement('div');
-                                                postElement.textContent = `${post.username}: ${post.description}`;
-                                                searchResults.appendChild(postElement);
-                                            });
-                                        }
-                                    }
-                                })
-                                .catch(error => {
-                                    console.error('검색 중 오류 발생:', error);
-                                });
-                        }
-                    }
-                });
-            }
-        });
+
         // 좋아요 기능 함수 - 새로 추가
         // 프로필 이미지 클릭 이벤트 핸들러 수정
         document.querySelectorAll('.profile-image, .username').forEach(element => {
