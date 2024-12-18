@@ -124,8 +124,9 @@ function createPostCard(post) {
             const data = await response.json();
             
             if (data.status === 'liked' || data.status === 'unliked') {
-                // 애니메이션 효과 추가
-                likeButton.style.animation = 'likeAnimation 0.5s ease';
+                // 현재 상태에 따라 다른 애니메이션 적용
+                const animationClass = data.status === 'liked' ? 'animate-like' : 'animate-unlike';
+                likeButton.classList.add(animationClass);
                 
                 // 이미지 변경
                 likeButton.src = data.status === 'liked' 
@@ -135,10 +136,10 @@ function createPostCard(post) {
                 // 좋아요 수 업데이트
                 likeCount.textContent = parseInt(likeCount.textContent) + (data.status === 'liked' ? 1 : -1);
                 
-                // 애니메이션 종료 후 제거
+                // 애니메이션 종료 후 클래스 제거
                 setTimeout(() => {
-                    likeButton.style.animation = '';
-                }, 500);
+                    likeButton.classList.remove(animationClass);
+                }, data.status === 'liked' ? 600 : 400);
             }
         } catch (error) {
             console.error('Error:', error);

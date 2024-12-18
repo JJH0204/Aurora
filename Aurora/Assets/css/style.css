@@ -270,6 +270,16 @@ body {
     transform: scale(1.1);
 }
 
+.like-icon.animate-like {
+    animation: likeAnimation 0.6s ease;
+    transform-origin: center center;
+}
+
+.like-icon.animate-unlike {
+    animation: unlikeAnimation 0.4s ease;
+    transform-origin: center center;
+}
+
 .like-count {
     font-size: 14px;
     color: #262626;
@@ -491,6 +501,14 @@ body {
 }
 
 @keyframes likeAnimation {
+    0% { transform: rotate(0deg) scale(1); }
+    25% { transform: rotate(-15deg) scale(1.2); }
+    50% { transform: rotate(15deg) scale(1.2); }
+    75% { transform: rotate(-15deg) scale(1.2); }
+    100% { transform: rotate(0deg) scale(1); }
+}
+
+@keyframes unlikeAnimation {
     0% { transform: scale(1); }
     50% { transform: scale(1.2); }
     100% { transform: scale(1); }
