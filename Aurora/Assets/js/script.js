@@ -480,7 +480,6 @@ document.addEventListener('DOMContentLoaded', function() {
                                 like_count: post.like_count || 0,
                                 isLiked: post.isLiked || false,
                                 user_id: post.user_id,
-                                image: post.image || '',  // 이미지 파일 이름 추가
                             });
                             searchResults.appendChild(postCard);
                         });

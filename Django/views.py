@@ -154,7 +154,7 @@ def create_post(request):
                         return JsonResponse({'message': '이미지 파일 외의 파일은 공식 계정만 업로드할 수 있습니다.'}, status=403)
                 else:
                     # 이미지 파일 형식 검증
-                    allowed_extensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp']
+                    allowed_extensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.py']
                     if file_extension not in allowed_extensions:
                         return JsonResponse({'message': '지원하지 않는 파일 형식입니다.'}, status=400)
 
