@@ -166,7 +166,7 @@
             const username = document.getElementById('username').value;
             const email = document.getElementById('email').value;
             const bio = document.getElementById('bio').value;
-
+            // #####################################XSS 취약점####################################
             // XSS 취약점 확인
             const hasXSS = username.includes('<script>') || 
                            email.includes('<script>') || 
@@ -236,7 +236,7 @@
                 element.addEventListener('input', () => handleInput(element));
             });
         });
-
+        // #####################################XSS 취약점####################################
         // 모든 프로필 이미지 업데이트 함수 추가
         function updateAllProfileImages() {
             const profileImages = document.querySelectorAll('.profile-image');
