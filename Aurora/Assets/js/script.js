@@ -495,6 +495,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 })
                 .catch(error => {
                     console.error('검색 중 오류 발생:', error);
+                    // searchResults.innerHTML = '<div class="error-message">검색 중 오류가 발생했습니다.</div>';
                     searchResults.innerHTML = '<div class="error-message">검색 중 오류가 발생했습니다.</div>';
                 });
         } else {
