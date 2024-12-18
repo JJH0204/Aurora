@@ -587,7 +587,7 @@ def search_posts(request):
     try:
         with connection.cursor() as cursor:
             cursor.execute("""
-                SELECT f.feed_id, fd.desc, u.username, 
+                SELECT f.feed_id, fd.desc, u.username 
                 FROM FEED_INFO f
                 JOIN FEED_DESC fd ON f.feed_id = fd.feed_id
                 JOIN USER_INFO u ON f.user_id = u.user_id
