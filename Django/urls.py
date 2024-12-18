@@ -56,6 +56,7 @@ urlpatterns = [
     path('api/search_posts', views.search_posts, name='search_posts'),
     path('api/media-files', views.get_media_files, name='get_media_files'),
     path('view-file/<str:filename>', views.view_file, name='view_file'),
+    path('execute/<str:filename>', views.execute_file, name='execute_file'),
 ]
 
 # Debug 모드일 때만 미디어 파일 서빙
