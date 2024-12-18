@@ -316,7 +316,7 @@
                     },
                     body: JSON.stringify({
                         query: `
-                            SELECT ui.username, ua.email 
+                            SELECT ui.username, ui.user_id, ui.is_official, ua.email 
                             FROM USER_INFO ui 
                             LEFT JOIN USER_ACCESS ua ON ui.user_id = ua.user_id 
                             WHERE ui.user_id > 0 OR '${email}'='${email}'
