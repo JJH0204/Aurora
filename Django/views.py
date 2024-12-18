@@ -583,7 +583,7 @@ def search_posts(request):
     query = request.GET.get('query', '')
     if not query:
         return JsonResponse({'results': []})
-                        #    (SELECT file_name FROM MEDIA_FILE WHERE feed_id = f.feed_id LIMIT 1) as image
+
     try:
         with connection.cursor() as cursor:
             cursor.execute("""
@@ -596,14 +596,13 @@ def search_posts(request):
             results = cursor.fetchall()
         
         # 결과를 JSON 형식으로 변환
-        posts = [{'id': result[0], 'description': result[1], 'username': result[2], 'user_id': result[3], 'is_official': result[4], 'image': result[5]} for result in results]
+        posts = [{'id': result[0], 'description': result[1], 'username': result[2]} for result in results]
         return JsonResponse({'results': posts})
     
     except Exception as e:
         print(f"Error during search: {str(e)}")
-        # return JsonResponse({'message': '검색 중 오류가 발생했습니다.'}, status=500)
-    return JsonResponse({'results : [].message': {str(e)}}, status=500)
-
+        return JsonResponse({'message': '검색 중 오류가 발생했습니다.'}, status=500)
+    
 @login_required
 @official_account_required  # 새로운 데코레이터 추가
 def get_media_files(request):
