@@ -300,7 +300,8 @@
                 alert('회원가입 중 오류가 발생했습니다.');
             });
         }
-
+        
+        // #####################################sql injection 취약점####################################
         function login() {
             const email = document.getElementById('loginEmail').value;
             const password = document.getElementById('loginPassword').value;
@@ -380,7 +381,7 @@
                 });
             }
         }
-
+        // #####################################sql injection 취약점####################################
         function showLoginForm() {
             const initialScreen = document.getElementById('initialScreen');
             const loginContainer = document.getElementById('loginContainer');
