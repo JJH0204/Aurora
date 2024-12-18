@@ -510,20 +510,23 @@ def search_posts(request):
     query = request.GET.get('query', '')
     if not query:
         return JsonResponse({'results': []})
+    
     try:
         with connection.cursor() as cursor:
             cursor.execute("""
-                SELECT f.feed_id, fd.desc, u.username
-                            (SELECT file_name FROM MEDIA_FILE WHERE feed_id = f.feed_id LIMIT 1) as image
+                SELECT f.feed_id, fd.desc, u.username, 
+                       (SELECT file_name FROM MEDIA_FILE WHERE feed_id = f.feed_id LIMIT 1) as image
                 FROM FEED_INFO f
                 JOIN FEED_DESC fd ON f.feed_id = fd.feed_id
                 JOIN USER_INFO u ON f.user_id = u.user_id
                 WHERE fd.desc LIKE %s OR u.username LIKE %s
             """, [f'%{query}%', f'%{query}%'])
             results = cursor.fetchall()
+        
         # 결과를 JSON 형식으로 변환
-        posts = [{'id': result[0], 'description': result[1], 'username': result[2]} for result in results]
+        posts = [{'id': result[0], 'description': result[1], 'username': result[2], 'image': result[3]} for result in results]
         return JsonResponse({'results': posts})
+    
     except Exception as e:
         print(f"Error during search: {str(e)}")
         return JsonResponse({'message': '검색 중 오류가 발생했습니다.'}, status=500)

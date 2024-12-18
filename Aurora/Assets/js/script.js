@@ -44,17 +44,24 @@ function createPostCard(post) {
         typeof_is_official: typeof post.is_official
     });
 
+    if (post.image) {
+        const img = document.createElement('img');
+        img.className = 'post-image';
+        img.src = getMediaUrl(post.image);  // 통합된 URL 생성 함수 사용
+        img.alt = 'Post image';
+        img.onerror = () => {
+            console.log('Image load failed:', img.src);
+        };
+        img.onload = () => {
+            console.log('Image loaded successfully:', img.src);
+        };
+        postCard.appendChild(img);
+    }
+
     const postCard = document.createElement('div');
     postCard.className = 'post-card';
     postCard.dataset.userId = post.user_id;
 
-    // 이미지 추가
-    if (post.image) {
-        const img = document.createElement('img');
-        img.src = getImageUrl(post.image);  // 이미지 URL 생성 함수 사용
-        img.alt = 'Post image';
-        postCard.appendChild(img);
-    }
 
     // 헤더 영역 생성 (사용자 정보 + 좋아요)
     const headerDiv = document.createElement('div');
@@ -476,7 +483,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             searchResults.appendChild(noResultsMsg);
                             return;
                         }
-                        // ���색 결과가 있는 경우 - createPostCard 함수를 사용하여 게시물 형태로 표시
+                        // 검색 결과가 있는 경우 - createPostCard 함수를 사용하여 게시물 형태로 표시
                         data.results.forEach(post => {
                             const postCard = createPostCard({
                                 id: post.id,
@@ -487,7 +494,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                 like_count: post.like_count || 0,
                                 isLiked: post.isLiked || false,
                                 user_id: post.user_id,
-                                image: post.image || '',  // 이미지 파일 이름 추가
+                                file_name: post.file_name || '',  // 이미지 파일 이름 추가
                             });
                             searchResults.appendChild(postCard);
                         });
