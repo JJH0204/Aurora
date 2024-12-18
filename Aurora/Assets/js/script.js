@@ -62,6 +62,9 @@ function createPostCard(post) {
     userImage.src = post.profile_image || '/static/img/default_profile.png';
     userImage.alt = 'User';
     userImage.className = 'user-image';
+    userImage.onerror = () => {
+        userImage.src = '/static/img/default_profile.png';
+    };
 
     const userTextInfo = document.createElement('div');
     userTextInfo.className = 'user-text-info';

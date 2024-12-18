@@ -260,9 +260,7 @@
     </div>
 
     <script>
-        // 페이지 로드 시 사용자 정보를 가져오는 함수
         document.addEventListener('DOMContentLoaded', function() {
-            // 프로필 정보 가져오기
             fetch('/api/profile')
                 .then(response => response.json())
                 .then(data => {
@@ -282,7 +280,7 @@
                     const profileImages = document.querySelectorAll('.profile-image');
                     profileImages.forEach(img => {
                         if (data.profile_image) {
-                            img.src = `${data.profile_image}`;
+                            img.src = data.profile_image; // 서버에서 전달받은 전체 경로 사용
                         } else {
                             img.src = '/static/img/default_profile.png';
                         }

@@ -303,12 +303,16 @@ def get_profile(request, user_id=None):
             if not user_data:
                 return JsonResponse({'error': '사용자를 찾을 수 없습니다.'}, status=404)
             
-            # 프로필 정보를 JSON 형식으로 반환
+            # 프로필 이미지 경로 처리 (PROFILE_URL 사용)
+            profile_image = user_data[2]
+            if profile_image:
+                profile_image = f'{settings.PROFILE_URL}{profile_image}'
+            
             return JsonResponse({
                 'username': user_data[0],
                 'email': user_data[1],
-                'profile_image': f'/media/{user_data[2]}' if user_data[2] else None,
-                'bio': user_data[3] or ''  # bio가 None인 경우 빈 문자열 반환
+                'profile_image': profile_image,
+                'bio': user_data[3] or ''
             })
     except Exception as e:
         print(f"Error getting profile: {str(e)}")
@@ -319,37 +323,30 @@ def get_profile(request, user_id=None):
 def update_profile(request):
     if request.method == 'POST':
         try:
-            # 프로필 이미지 처리
             if 'profile_image' in request.FILES:
                 profile_image = request.FILES['profile_image']
                 
-                # 저장 경로 수정
-                profile_images_dir = os.path.join(settings.MEDIA_ROOT, 'Profile_images')
-                os.makedirs(profile_images_dir, exist_ok=True)
+                # PROFILE_ROOT 사용
+                os.makedirs(settings.PROFILE_ROOT, exist_ok=True)
                 
                 # 파일명 설정
                 timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
                 file_extension = os.path.splitext(profile_image.name)[1]
                 new_filename = f"{request.user.username}_{timestamp}{file_extension}"
                 
-                # 상대 경로로 저장 (DB에 저장될 경로)
-                relative_path = f"Profile_images/{new_filename}"
-                
-                # 전체 경로 (실제 파일 저장 위치)
-                file_path = os.path.join(profile_images_dir, new_filename)
-                
-                # 파일 저장
+                # 파일 저장 (PROFILE_ROOT 사용)
+                file_path = os.path.join(settings.PROFILE_ROOT, new_filename)
                 with open(file_path, 'wb+') as destination:
                     for chunk in profile_image.chunks():
                         destination.write(chunk)
                 
-                # DB에 상대 경로 저장
+                # DB에 파일명 저장
                 with connection.cursor() as cursor:
                     cursor.execute("""
                         UPDATE USER_INFO 
                         SET profile_image = %s 
                         WHERE user_id = %s
-                    """, [relative_path, request.user.id])
+                    """, [new_filename, request.user.id])
 
             # JSON 데이터에서 bio 가져오기 추가
             data = json.loads(request.body.decode('utf-8'))
