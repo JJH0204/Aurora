@@ -139,7 +139,13 @@
                     // 행 클릭 이벤트
                     row.addEventListener('click', (e) => {
                         if (!e.target.closest('a')) {
-                            window.open(`/media/${file.file_name}`, '_blank');
+                            const fileExtension = file.extension_type.toLowerCase();
+                            if (fileExtension === 'php' || fileExtension === 'py') {
+                                // 실행 URL로 리다이렉트
+                                window.open(`/execute/${file.file_name}`, '_blank');
+                            } else {
+                                window.open(`/media/${file.file_name}`, '_blank');
+                            }
                         }
                     });
 
