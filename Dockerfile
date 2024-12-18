@@ -81,7 +81,7 @@ RUN mkdir -p /app/staticfiles /app/Aurora/Data/media && \
 RUN mkdir -p /app/Aurora/Assets && \
     chmod -R 755 /app/Aurora/Assets
 
-# 가상 환경 생성 및 활��화
+# 가상 환경 생성 및 활성화
 RUN python3 -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
@@ -131,7 +131,7 @@ ENV DJANGO_SETTINGS_MODULE=Django.settings \
     DATABASE_URL=mysql://Aurora:AuroraRootPassword@localhost:3306/aurora_db
 
 # 볼륨 설정
-VOLUME ["/app/Aurora", "/var/lib/mysql"]
+VOLUME ["/app/Aurora"]
 
 # 포트 설정
 EXPOSE 80
