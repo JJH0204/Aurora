@@ -14,7 +14,7 @@
         <div class="header">
             <div class="search-container">
                 <input type="text" class="form-control search" placeholder="Aurora">
-                <img src="{% static 'img/search.png' %}" alt="Search">
+                <img id="search_img_btn" src="{% static 'img/search.png' %}" alt="Search">
             </div>
             {% if user.is_authenticated %}
                 <button class="login-btn" onclick="confirmLogout()">Logout</button>
