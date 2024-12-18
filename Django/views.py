@@ -410,7 +410,7 @@ def get_feed_posts(request):
             LEFT JOIN FEED_DESC fd ON f.feed_id = fd.feed_id
             LEFT JOIN USER_INFO ui ON f.user_id = ui.user_id
             LEFT JOIN RankedMedia rm ON f.feed_id = rm.feed_id AND rm.rn = 1
-            ORDER BY f.feed_id DESC;
+            ORDER BY RAND();
         """)
         
         columns = [col[0] for col in cursor.description]
