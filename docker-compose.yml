@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  aurora:
+    image: krjaeh0/aurora:latest
+    container_name: aurora
+    ports:
+      - "80:80"
+    volumes:
+      - ./Aurora:/app/Aurora
+      - aurora_db_data:/var/lib/mysql
+      - aurora_media:/app/Aurora/Data/media
+    environment:
+      - MYSQL_DATABASE=aurora_db
+      - MYSQL_USER=root
+      - MYSQL_PASSWORD=rootpassword
+      - MYSQL_ROOT_PASSWORD=qwer
+
+volumes:
+  aurora_db_data:
+    name: aurora_db_data
+  aurora_media:
+    name: aurora_media
