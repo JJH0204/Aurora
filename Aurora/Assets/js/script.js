@@ -47,7 +47,7 @@ function createPostCard(post) {
     if (post.image) {
         const img = document.createElement('img');
         img.className = 'post-image';
-        img.src = getMediaUrl(post.image);  // 통합된 URL 생성 함수 사용
+        img.src = getImageUrl(post.image);  // 통합된 URL 생성 함수 사용
         img.alt = 'Post image';
         img.onerror = () => {
             console.log('Image load failed:', img.src);
