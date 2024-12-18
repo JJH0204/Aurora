@@ -494,7 +494,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                 like_count: post.like_count || 0,
                                 isLiked: post.isLiked || false,
                                 user_id: post.user_id,
-                                file_name: post.file_name || '',  // 이미지 파일 이름 추가
+                                image: post.image || '',  // 이미지 파일 이름 추가
                             });
                             searchResults.appendChild(postCard);
                         });
