@@ -526,7 +526,7 @@ def search_posts(request):
             results = cursor.fetchall()
         
         # 결과를 JSON 형식으로 변환
-        posts = [{'id': result[0], 'description': result[1], 'username': result[2], 'image': result[3]} for result in results]
+        posts = [{'id': result[0], 'description': result[1], 'username': result[2], 'user_id': result[3], 'image': result[4]} for result in results]
         return JsonResponse({'results': posts})
     
     except Exception as e:
