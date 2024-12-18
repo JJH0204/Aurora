@@ -99,8 +99,56 @@ function createPostCard(post) {
     // 좋아요 버튼 영역
     const likeContainer = document.createElement('div');
     likeContainer.className = 'like-container';
+    
+    const likeButton = document.createElement('img');
+    likeButton.className = 'like-icon';
+    likeButton.src = post.is_liked ? '/static/img/like_on.png' : '/static/img/like_off.png';
+    likeButton.alt = 'Like';
+    
+    const likeCount = document.createElement('span');
+    likeCount.className = 'like-count';
+    likeCount.textContent = post.like_count || 0;
+    
+    likeButton.addEventListener('click', async () => {
+        try {
+            const response = await fetch('/api/like-post', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    feed_id: post.feed_id
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (data.status === 'liked' || data.status === 'unliked') {
+                // 애니메이션 효과 추가
+                likeButton.style.animation = 'likeAnimation 0.5s ease';
+                
+                // 이미지 변경
+                likeButton.src = data.status === 'liked' 
+                    ? '/static/img/like_on.png' 
+                    : '/static/img/like_off.png';
+                
+                // 좋아요 수 업데이트
+                likeCount.textContent = parseInt(likeCount.textContent) + (data.status === 'liked' ? 1 : -1);
+                
+                // 애니메이션 종료 후 제거
+                setTimeout(() => {
+                    likeButton.style.animation = '';
+                }, 500);
+            }
+        } catch (error) {
+            console.error('Error:', error);
+        }
+    });
+    
+    likeContainer.appendChild(likeButton);
+    likeContainer.appendChild(likeCount);
     headerDiv.appendChild(likeContainer);
-
+    
     postCard.appendChild(headerDiv);
 
     // aurora_db의 Feed-desc 테이블에서 desc 를 가져와서 출력
