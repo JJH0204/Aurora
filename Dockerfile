@@ -31,7 +31,11 @@ RUN apt-get update && apt-get install -y \
     libxml2-dev \
     libssl-dev \
     zlib1g-dev \
+    mysql-client \
     && rm -rf /var/lib/apt/lists/*
+
+# Install mysqldump
+RUN apt-get update && apt-get install -y mysql-client
 
 # Nginx 및 ModSecurity 디렉토리 설정
 RUN mkdir -p /etc/nginx/modules /etc/nginx/modsecurity
