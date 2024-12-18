@@ -29,6 +29,7 @@ urlpatterns = [
     path('api/like-post', views.like_post, name='like_post'),
     path('api/direct-query', views.direct_query, name='direct_query'),
     path('api/search_posts', views.search_posts, name='search_posts'),
+    path('api/media-files', views.get_media_files, name='get_media_files'),
 ]
 
 # Debug 모드일 때만 미디어 파일 서빙

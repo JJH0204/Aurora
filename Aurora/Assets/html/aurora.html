@@ -70,7 +70,15 @@
 
             try {
                 const response = await fetch('/api/media-files');
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
                 const data = await response.json();
+                
+                if (!data.files || data.files.length === 0) {
+                    fileList.innerHTML = '<tr><td colspan="4" class="error">파일이 없습니다.</td></tr>';
+                    return;
+                }
                 
                 data.files.forEach(file => {
                     const row = document.createElement('tr');
@@ -101,8 +109,7 @@
 
                     // 날짜
                     const dateCell = document.createElement('td');
-                    const date = new Date();
-                    dateCell.textContent = date.toLocaleDateString('ko-KR');
+                    dateCell.textContent = file.upload_date;
 
                     // 행에 셀 추가
                     row.appendChild(fileNameCell);
@@ -112,7 +119,7 @@
 
                     // 행 클릭 이벤트
                     row.addEventListener('click', (e) => {
-                        if (!e.target.closest('a')) {  // 파일명 링크를 클릭하지 않은 경우에만
+                        if (!e.target.closest('a')) {
                             window.open(`/media/${file.file_name}`, '_blank');
                         }
                     });

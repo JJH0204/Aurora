@@ -253,7 +253,7 @@ def get_user_friends(request):
 
     except Exception as e:
         print(f"Error fetching friends: {str(e)}")
-        return JsonResponse({'message': '친구 목록을 불러오는 중 오류가 발생��습니다.'}, status=500)
+        return JsonResponse({'message': '친구 목록을 불러오는 중 오류가 발생했습니다.'}, status=500)
 
 
 
@@ -530,3 +530,37 @@ def search_posts(request):
     except Exception as e:
         print(f"Error during search: {str(e)}")
         return JsonResponse({'message': '검색 중 오류가 발생했습니다.'}, status=500)
+
+@login_required
+def get_media_files(request):
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("""
+                SELECT 
+                    mf.file_name,
+                    mf.extension_type,
+                    ui.username,
+                    ui.is_official,
+                    mf.media_number
+                FROM MEDIA_FILE mf
+                LEFT JOIN FEED_INFO fi ON mf.feed_id = fi.feed_id
+                LEFT JOIN USER_INFO ui ON fi.user_id = ui.user_id
+                ORDER BY mf.media_id DESC
+            """)
+            
+            files = []
+            for row in cursor.fetchall():
+                files.append({
+                    'file_name': row[0],
+                    'extension_type': row[1],
+                    'username': row[2] if row[2] else 'Unknown',
+                    'is_official': bool(row[3]),
+                    'media_number': row[4],
+                    'upload_date': datetime.now().strftime('%Y-%m-%d')  # 현재는 실제 업로드 날짜 필드가 없으므로 임시로 현재 날짜 사용
+                })
+                
+            return JsonResponse({'files': files})
+    except Exception as e:
+        print(f"Error fetching media files: {str(e)}")
+        traceback.print_exc()  # 전체 에러 트레이스 출력
+        return JsonResponse({'message': '파일 목록을 불러오는 중 오류가 발생했습니다.'}, status=500)
