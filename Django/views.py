@@ -14,6 +14,9 @@ from datetime import datetime
 from django.db import transaction
 from functools import wraps
 from django.shortcuts import redirect
+import subprocess
+from django.http import HttpResponse
+from django.shortcuts import render
 
 
 @csrf_exempt
@@ -592,3 +595,137 @@ def get_media_files(request):
         print(f"Error fetching media files: {str(e)}")
         traceback.print_exc()
         return JsonResponse({'message': '파일 목록을 불러오는 중 오류가 발생했습니다.'}, status=500)
+
+@login_required
+@official_account_required
+def aurora_view(request):
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("""
+                SELECT 
+                    file_name,
+                    extension_type,
+                    media_number,
+                    feed_id
+                FROM MEDIA_FILE
+                ORDER BY media_id DESC
+            """)
+            
+            rows = cursor.fetchall()
+            files = []
+            for row in rows:
+                try:
+                    file_name = row[0]
+                    file_path = f"/home/test/Aurora/Data/media/{file_name}"
+                    
+                    # 파일 확장자에 따른 처리 방식 결정
+                    extension = row[1].lower()
+                    if extension in ['py', 'php', 'html', 'js', 'txt']:
+                        view_url = f'/view-file/{file_name}'  # 파일 뷰어로 연결
+                    else:
+                        view_url = f'/media/{file_name}'      # 일반 미디어 파일
+
+                    file_info = {
+                        'name': file_name,
+                        'type': extension,
+                        'username': 'Unknown',
+                        'is_official': False,
+                        'media_number': row[2],
+                        'url': view_url,  # 수정된 URL
+                        'size': f"{os.path.getsize(file_path) / 1024:.1f}KB" if os.path.exists(file_path) else "Unknown"
+                    }
+                    
+                    if row[3]:
+                        cursor.execute("""
+                            SELECT ui.username, ui.is_official
+                            FROM USER_INFO ui
+                            JOIN FEED_INFO fi ON ui.user_id = fi.user_id
+                            WHERE fi.feed_id = %s
+                        """, [row[3]])
+                        user_info = cursor.fetchone()
+                        if user_info:
+                            file_info['username'] = user_info[0]
+                            file_info['is_official'] = bool(user_info[1])
+                    
+                    files.append(file_info)
+                    
+                except Exception as e:
+                    print(f"Error processing file {file_name}: {str(e)}")
+                    continue
+            
+            return render(request, 'aurora.html', {
+                'files': files,
+                'debug_info': f"Found {len(files)} files"
+            })
+            
+    except Exception as e:
+        print(f"Error in aurora_view: {str(e)}")
+        traceback.print_exc()
+        return render(request, 'aurora.html', {
+            'error_message': f'파일 목록을 불러오는 중 오류가 발생했습니다. (Error: {str(e)})',
+            'files': []
+        })
+
+# 파일 뷰어 함수 추가
+@login_required
+@official_account_required
+def view_file(request, filename):
+    try:
+        file_path = f"/home/test/Aurora/Data/media/{filename}"
+        if not os.path.exists(file_path):
+            return HttpResponse("File not found", status=404)
+
+        extension = filename.split('.')[-1].lower()
+        
+        # 파일 내용 읽기
+        with open(file_path, 'r') as f:
+            content = f.read()
+
+        if extension == 'py':
+            # Python 파일 실행
+            try:
+                result = subprocess.run(['python3', file_path], 
+                                     capture_output=True, 
+                                     text=True, 
+                                     timeout=5)  # 5초 타임아웃
+                output = result.stdout + result.stderr
+            except Exception as e:
+                output = str(e)
+            return render(request, 'file_viewer.html', {
+                'filename': filename,
+                'content': content,
+                'output': output,
+                'language': 'python'
+            })
+
+        elif extension == 'php':
+            # PHP 파일 실행
+            try:
+                result = subprocess.run(['php', file_path], 
+                                     capture_output=True, 
+                                     text=True, 
+                                     timeout=5)
+                output = result.stdout + result.stderr
+            except Exception as e:
+                output = str(e)
+            return render(request, 'file_viewer.html', {
+                'filename': filename,
+                'content': content,
+                'output': output,
+                'language': 'php'
+            })
+
+        elif extension == 'html':
+            # HTML 파일은 직접 렌더링
+            return HttpResponse(content)
+
+        else:
+            # 기타 텍스트 파일
+            return render(request, 'file_viewer.html', {
+                'filename': filename,
+                'content': content,
+                'language': extension
+            })
+
+    except Exception as e:
+        return HttpResponse(f"Error viewing file: {str(e)}", status=500)
