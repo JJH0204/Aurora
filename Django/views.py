@@ -504,7 +504,7 @@ def upload_file(request):
 @csrf_exempt
 @login_required
 def search_posts(request):
-    if request.method != 'GET':
+    if request.method != 'POST':
         return JsonResponse({'message': '잘못된 요청 방식입니다.'}, status=405)
 
     query = request.GET.get('query', '')

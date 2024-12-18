@@ -501,7 +501,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (e.key === 'Enter') {
             const query = this.value.trim();
             if (query) {
-                fetch(`/api/search?query=${encodeURIComponent(query)}`)
+                fetch(`/api/search_posts?query=${encodeURIComponent(query)}`)
                     .then(response => response.json())
                     .then(data => {
                         // 검색 결과 표시
