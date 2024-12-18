@@ -450,7 +450,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const query = this.value.trim();
         
         if (query) {
-            fetch(`/api/search?query=${encodeURIComponent(query)}`)
+            fetch(`/api/search_posts?query=${encodeURIComponent(query)}`)
                 .then(response => response.json())
                 .then(data => {
                     // 기존 피드 숨기기
@@ -495,14 +495,29 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 });
-    // 엔터키로도 검색 가능하도록
+    // 엔터키로도 검색 가능하도록 
+    const searchInput = document.querySelector('.search');
     searchInput.addEventListener('keypress', function(e) {
         if (e.key === 'Enter') {
-            searchButton.click();
+            const query = this.value.trim();
+            if (query) {
+                fetch(`/api/search?query=${encodeURIComponent(query)}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        // 검색 결과 표시
+                        searchResults.innerHTML = '';
+                        data.results.forEach(post => {
+                            const postElement = document.createElement('div');
+                            postElement.textContent = `${post.username}: ${post.description}`;
+                            searchResults.appendChild(postElement);
+                        });
+                    })
+                    .catch(error => {
+                        console.error('검색 중 오류 발생:', error);
+                    });
+            }
         }
     });
-
-
 function updateImagePreview() {
     const input = document.getElementById('imageInput');
     const preview = document.querySelector('.image-preview');

@@ -99,7 +99,7 @@
             
             if (searchButton) {
                 searchButton.addEventListener('click', function() {
-                    const searchInput = document.getElementById('searchInput');
+                    const searchInput = document.querySelector('.search');
                     if (searchInput) {
                         const query = searchInput.value.trim();
                         if (query) {
