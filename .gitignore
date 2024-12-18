@@ -162,3 +162,4 @@ cython_debug/
 *.jpeg
 *.png
 *.mp4
+/Aurora/Data/media/*
