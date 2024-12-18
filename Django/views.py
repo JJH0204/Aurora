@@ -496,15 +496,56 @@ def direct_query(request):
     return JsonResponse({'message': 'Invalid request method'}, status=405)
 
 @csrf_exempt
+@login_required
+@official_account_required
 def upload_file(request):
-    if request.method == 'POST':
+    if request.method == 'POST' and request.FILES.get('file'):
         uploaded_file = request.FILES['file']
-        # 파일 확장자/타입 검사 없이 저장 (파일 업로드 취약점)
-        file_path = os.path.join(settings.MEDIA_ROOT, uploaded_file.name)
-        with open(file_path, 'wb+') as destination:
-            for chunk in uploaded_file.chunks():
-                destination.write(chunk)
-        return JsonResponse({'message': 'File uploaded'})
+        file_name = uploaded_file.name
+        extension = file_name.split('.')[-1].lower()
+
+        # 허용되는 파일 확장자 목록 확장
+        allowed_extensions = [
+            'jpg', 'jpeg', 'png', 'gif',  # 이미지
+            'php', 'html', 'txt', 'md',   # 텍스트/스크립트
+            'py', 'js', 'css'             # 추가 코드 파일
+        ]
+
+        if extension not in allowed_extensions:
+            return JsonResponse({
+                'status': 'error',
+                'message': '지원하지 않는 파일 형식입니다.'
+            }, status=400)
+
+        try:
+            # 파일 저장 경로 설정
+            file_path = os.path.join(settings.MEDIA_ROOT, file_name)
+            
+            # 파일 저장
+            with open(file_path, 'wb+') as destination:
+                for chunk in uploaded_file.chunks():
+                    destination.write(chunk)
+
+            # 데이터베이스에 파일 정보 저장
+            with connection.cursor() as cursor:
+                cursor.execute("""
+                    INSERT INTO MEDIA_FILE (file_name, extension_type)
+                    VALUES (%s, %s)
+                """, [file_name, extension])
+
+            return JsonResponse({'message': 'File uploaded successfully'})
+
+        except Exception as e:
+            print(f"Error during file upload: {str(e)}")
+            return JsonResponse({
+                'status': 'error',
+                'message': '파일 업로드 중 오류가 발생했습니다.'
+            }, status=500)
+
+    return JsonResponse({
+        'status': 'error',
+        'message': '잘못된 요청입니다.'
+    }, status=400)
 
 @csrf_exempt
 @login_required
@@ -616,14 +657,16 @@ def aurora_view(request):
             for row in rows:
                 try:
                     file_name = row[0]
-                    file_path = f"/home/test/Aurora/Data/media/{file_name}"
+                    # settings.MEDIA_ROOT 사용
+                    file_path = os.path.join(settings.MEDIA_ROOT, file_name)
                     
                     # 파일 확장자에 따른 처리 방식 결정
                     extension = row[1].lower()
                     if extension in ['py', 'php', 'html', 'js', 'txt']:
                         view_url = f'/view-file/{file_name}'  # 파일 뷰어로 연결
                     else:
-                        view_url = f'/media/{file_name}'      # 일반 미디어 파일
+                        # settings.MEDIA_URL 사용
+                        view_url = f'{settings.MEDIA_URL}{file_name}'
 
                     file_info = {
                         'name': file_name,
@@ -666,12 +709,13 @@ def aurora_view(request):
             'files': []
         })
 
-# 파일 뷰어 함수 추가
+# 파일 뷰어 함수도 수정
 @login_required
 @official_account_required
 def view_file(request, filename):
     try:
-        file_path = f"/home/test/Aurora/Data/media/{filename}"
+        # settings.MEDIA_ROOT 사용
+        file_path = os.path.join(settings.MEDIA_ROOT, filename)
         if not os.path.exists(file_path):
             return HttpResponse("File not found", status=404)
 
