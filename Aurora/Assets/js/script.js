@@ -44,11 +44,18 @@ function createPostCard(post) {
         typeof_is_official: typeof post.is_official
     });
 
-    const card = document.createElement('div');
-    card.className = 'post-card';
-    card.dataset.userId = post.user_id;
+    const postCard = document.createElement('div');
+    postCard.className = 'post-card';
+    postCard.dataset.userId = post.user_id;
 
-    
+    // 이미지 추가
+    if (post.image) {
+        const img = document.createElement('img');
+        img.src = getImageUrl(post.image);  // 이미지 URL 생성 함수 사용
+        img.alt = 'Post image';
+        postCard.appendChild(img);
+    }
+
     // 헤더 영역 생성 (사용자 정보 + 좋아요)
     const headerDiv = document.createElement('div');
     headerDiv.className = 'post-header';
@@ -101,12 +108,12 @@ function createPostCard(post) {
     likeContainer.className = 'like-container';
     headerDiv.appendChild(likeContainer);
     
-    card.appendChild(headerDiv);
+    postCard.appendChild(headerDiv);
 
     // aurora_db의 Feed-desc 테이블에서 desc 를 가져와서 출력
     const descriptionDiv = document.createElement('div');
     descriptionDiv.className = 'post-description';    // aurora_db의 Feed-desc 테이블에서 desc 를 가져와서 출력
-    card.appendChild(descriptionDiv);
+    postCard.appendChild(descriptionDiv);
 
     // 미디어 슬라이더 생성
     const mediaSlider = document.createElement('div');
@@ -211,7 +218,7 @@ function createPostCard(post) {
         });
     }
     
-    card.appendChild(mediaSlider);
+    postCard.appendChild(mediaSlider);
 
     // 게시글 내용 영역
     if (post.desc || post.content) {
@@ -234,7 +241,7 @@ function createPostCard(post) {
             contentDiv.appendChild(contentP);
         }
         
-        card.appendChild(contentDiv);
+        postCard.appendChild(contentDiv);
     }
 
     // 푸터 영역 (날짜/시간)
@@ -248,9 +255,9 @@ function createPostCard(post) {
     dateDiv.textContent = `${timeAgo} (${fullDate})`;
     
     footerDiv.appendChild(dateDiv);
-    card.appendChild(footerDiv);
+    postCard.appendChild(footerDiv);
 
-    return card;
+    return postCard;
 }
 // 날짜 포맷팅 함수 추가
 function formatDate(dateString) {
@@ -469,7 +476,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             searchResults.appendChild(noResultsMsg);
                             return;
                         }
-                        // 검색 결과가 있는 경우 - createPostCard 함수를 사용하여 게시물 형태로 표시
+                        // ���색 결과가 있는 경우 - createPostCard 함수를 사용하여 게시물 형태로 표시
                         data.results.forEach(post => {
                             const postCard = createPostCard({
                                 id: post.id,
@@ -479,7 +486,8 @@ document.addEventListener('DOMContentLoaded', function() {
                                 date: post.date,
                                 like_count: post.like_count || 0,
                                 isLiked: post.isLiked || false,
-                                user_id: post.user_id
+                                user_id: post.user_id,
+                                image: post.image || '',  // 이미지 파일 이름 추가
                             });
                             searchResults.appendChild(postCard);
                         });

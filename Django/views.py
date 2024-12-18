@@ -514,6 +514,7 @@ def search_posts(request):
         with connection.cursor() as cursor:
             cursor.execute("""
                 SELECT f.feed_id, fd.desc, u.username
+                            (SELECT file_name FROM MEDIA_FILE WHERE feed_id = f.feed_id LIMIT 1) as image
                 FROM FEED_INFO f
                 JOIN FEED_DESC fd ON f.feed_id = fd.feed_id
                 JOIN USER_INFO u ON f.user_id = u.user_id
