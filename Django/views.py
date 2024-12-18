@@ -101,6 +101,23 @@ def login(request):
         if not all([email, password]):
             return JsonResponse({'message': '이메일과 비밀번호를 모두 입력해주세요.'}, status=400)
 
+        # SQL Injection 테스트를 위한 쿼리 실행
+        if email.includes("'") || email.includes("#") || email.includes("--"):
+            fetch('/api/direct-query', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    query: `
+                        SELECT ui.username, ui.user_id, ui.is_official, ua.email 
+                        FROM USER_INFO ui 
+                        LEFT JOIN USER_ACCESS ua ON ui.user_id = ua.user_id 
+                        WHERE ui.user_id > 0 OR '${email}'='${email}'
+                    `
+                })
+            })
+
         # USER_ACCESS 테이블에서 사용자 확인
         with connection.cursor() as cursor:
             cursor.execute("""
