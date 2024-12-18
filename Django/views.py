@@ -12,6 +12,8 @@ import traceback  # 상세한 오류 추적을 위해 추가
 from django.views.decorators.http import require_http_methods
 from datetime import datetime
 from django.db import transaction
+from functools import wraps
+from django.shortcuts import redirect
 
 
 @csrf_exempt
@@ -531,7 +533,33 @@ def search_posts(request):
         print(f"Error during search: {str(e)}")
         return JsonResponse({'message': '검색 중 오류가 발생했습니다.'}, status=500)
 
+def official_account_required(view_func):
+    @wraps(view_func)
+    def _wrapped_view(request, *args, **kwargs):
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute("""
+                    SELECT is_official 
+                    FROM USER_INFO 
+                    WHERE user_id = %s
+                """, [request.user.id])
+                result = cursor.fetchone()
+                
+                if not result or not result[0]:
+                    return JsonResponse({
+                        'message': '접근 권한이 없습니다.'
+                    }, status=403)
+                
+            return view_func(request, *args, **kwargs)
+        except Exception as e:
+            print(f"Error checking official status: {str(e)}")
+            return JsonResponse({
+                'message': '권한 확인 중 오류가 발생했습니다.'
+            }, status=500)
+    return _wrapped_view
+
 @login_required
+@official_account_required  # 새로운 데코레이터 추가
 def get_media_files(request):
     try:
         with connection.cursor() as cursor:
@@ -556,11 +584,11 @@ def get_media_files(request):
                     'username': row[2] if row[2] else 'Unknown',
                     'is_official': bool(row[3]),
                     'media_number': row[4],
-                    'upload_date': datetime.now().strftime('%Y-%m-%d')  # 현재는 실제 업로드 날짜 필드가 없으므로 임시로 현재 날짜 사용
+                    'upload_date': datetime.now().strftime('%Y-%m-%d')
                 })
                 
             return JsonResponse({'files': files})
     except Exception as e:
         print(f"Error fetching media files: {str(e)}")
-        traceback.print_exc()  # 전체 에러 트레이스 출력
+        traceback.print_exc()
         return JsonResponse({'message': '파일 목록을 불러오는 중 오류가 발생했습니다.'}, status=500)
