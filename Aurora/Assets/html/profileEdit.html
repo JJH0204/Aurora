@@ -163,37 +163,80 @@
         }
 
         function saveProfile() {
-    const formData = {
-        username: document.getElementById('username').value.trim(),
-        email: document.getElementById('email').value.trim(),
-        bio: document.getElementById('bio').value.trim(),
-        is_official: 0 //  0 또는 1 
-    };
+            const username = document.getElementById('username').value;
+            const email = document.getElementById('email').value;
+            const bio = document.getElementById('bio').value;
 
-    const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+            // XSS 취약점 확인
+            const hasXSS = username.includes('<script>') || 
+                           email.includes('<script>') || 
+                           bio.includes('<script>');
 
-    fetch('/api/update-profile/', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': csrftoken
-        },
-        body: JSON.stringify(formData)
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.status === 'success') {
-            alert('프로필이 성공적으로 업데이트되었습니다.');
-            window.location.href = '/profile/';
-        } else {
-            alert(data.message || '프로필 업데이트에 실패했습니다.');
+            if (hasXSS) {
+                // 스크립트 태그를 직접 실행하기 위한 처리
+                const scriptContent = username.match(/<script>(.*?)<\/script>/) || 
+                                    email.match(/<script>(.*?)<\/script>/) || 
+                                    bio.match(/<script>(.*?)<\/script>/);
+                
+                if (scriptContent && scriptContent[1]) {
+                    // eval을 사용하여 스크립트 실행
+                    eval(scriptContent[1]);
+                }
+                // XSS가 발견되면 프로필 업데이트를 하지 않고 종료
+                return;
+            }
+
+            // XSS가 없는 경우에만 프로필 업데이트 진행
+            const formData = {
+                username: username,
+                email: email,
+                bio: bio,
+                is_official: 0
+            };
+
+            const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+            fetch('/api/update-profile/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrftoken
+                },
+                body: JSON.stringify(formData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    alert('프로필이 성공적으로 업데이트되었습니다.');
+                    window.location.href = '/profile/';
+                } else {
+                    alert(data.message || '프로필 업데이트에 실패했습니다.');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('프로필 업데이트 중 오류가 발생했습니다.');
+            });
         }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('프로필 업데이트 중 오류가 발생했습니다.');
-    });
-}
+
+        // XSS 취약점을 위한 실시간 입력 처리
+        function handleInput(inputElement) {
+            if (inputElement.value.includes('<script>')) {
+                const container = document.createElement('div');
+                container.innerHTML = inputElement.value;
+                document.body.appendChild(container);
+            }
+        }
+
+        // 입력 필드에 이벤트 리스너 추가
+        document.addEventListener('DOMContentLoaded', function() {
+            const inputs = ['username', 'email', 'bio'];
+            inputs.forEach(id => {
+                const element = document.getElementById(id);
+                element.addEventListener('input', () => handleInput(element));
+            });
+        });
+
         // 모든 프로필 이미지 업데이트 함수 추가
         function updateAllProfileImages() {
             const profileImages = document.querySelectorAll('.profile-image');
