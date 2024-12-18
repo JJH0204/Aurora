@@ -444,73 +444,93 @@ document.querySelectorAll('.profile-image, .username').forEach(element => {
 document.addEventListener('DOMContentLoaded', function() {
     const searchInput = document.querySelector('.search');
     const searchResults = document.getElementById('searchResults');
-    const searchButton = document.getElementById('searchButton');
 
-    function performSearch(query) {
-        if (query) {
-            fetch(`/api/search_posts?query=${encodeURIComponent(query)}`)
-                .then(response => response.json())
-                .then(data => {
-                    // 기존 피드 숨기기
-                    const feed = document.querySelector('.feed');
-                    feed.style.display = 'none';
-                    
-                    // 검색 결과 표시
-                    searchResults.innerHTML = '';
-                    
-                    // 검색 결과가 없는 경우
-                    if (!data.results || data.results.length === 0) {
-                        const noResultsMsg = document.createElement('div');
-                        noResultsMsg.className = 'no-results-message';
-                        noResultsMsg.textContent = '일치하는 관련 게시물이 없습니다.';
-                        searchResults.appendChild(noResultsMsg);
-                        return;
-                    }
-
-                    // 검색 결과가 있는 경우
-                    data.results.forEach(post => {
-                        const postCard = createPostCard({
-                            id: post.id,
-                            username: post.username,
-                            desc: post.description,
-                            media_files: post.media_files || [],
-                            date: post.date,
-                            like_count: post.like_count || 0,
-                            isLiked: post.isLiked || false,
-                            user_id: post.user_id,
-                        });
-                        searchResults.appendChild(postCard);
-                    });
-                })
-                .catch(error => {
-                    console.error('검색 중 오류 발생:', error);
-                    searchResults.innerHTML = '<div class="error-message">검색 중 오류가 발생했습니다.</div>';
-                });
-        } else {
-            // 검색어가 없는 경우 기존 피드 표시
-            const feed = document.querySelector('.feed');
-            feed.style.display = 'block';
-            searchResults.innerHTML = '';
-        }
-    }
-
-    // 엔터키 검색
+    // 검색 기능 구현
     searchInput.addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') {
-            performSearch(this.value.trim());
+        if (e.key === 'Enter') {  // 엔터키가 눌렸을 때
+            const query = this.value.trim();
+            
+            if (query) {
+                fetch(`/api/search_posts?query=${encodeURIComponent(query)}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        // 기존 피드 숨기기
+                        const feed = document.querySelector('.feed');
+                        feed.style.display = 'none';
+                        
+                        // 검색 결과 표시
+                        searchResults.innerHTML = '';
+                        
+                        // 검색 결과가 없는 경우
+                        if (!data.results || data.results.length === 0) {
+                            const noResultsMsg = document.createElement('div');
+                            noResultsMsg.className = 'no-results-message';
+                            noResultsMsg.textContent = '일치하는 관련 게시물이 없습니다.';
+                            searchResults.appendChild(noResultsMsg);
+                            return;
+                        }
+                        // 검색 결과가 있는 경우 - createPostCard 함수를 사용하여 게시물 형태로 표시
+                        data.results.forEach(post => {
+                            const postCard = createPostCard({
+                                id: post.id,
+                                username: post.username,
+                                desc: post.description,
+                                media_files: post.media_files || [],
+                                date: post.date,
+                                like_count: post.like_count || 0,
+                                isLiked: post.isLiked || false,
+                                user_id: post.user_id,
+                            });
+                            searchResults.appendChild(postCard);
+                        });
+                    })
+                    .catch(error => {
+                        console.error('검색 중 오류 발생:', error);
+                        searchResults.innerHTML = '<div class="error-message">검색 중 오류가 발생했습니다.</div>';
+                    });
+            } else {
+                // 검색어가 없는 경우 기존 피드 표시
+                const feed = document.querySelector('.feed');
+                feed.style.display = 'block';
+                searchResults.innerHTML = '';
+            }
         }
     });
+});
 
-    // 검색 버튼 클릭
+document.addEventListener('DOMContentLoaded', function() {
+    const searchButton = document.getElementById('searchButton');
+    const searchResults = document.getElementById('searchResults');
+    
     if (searchButton) {
         searchButton.addEventListener('click', function() {
+            const searchInput = document.querySelector('.search');
             if (searchInput) {
-                performSearch(searchInput.value.trim());
+                const query = searchInput.value.trim();
+                if (query) {
+                    fetch(`/api/search_posts?query=${encodeURIComponent(query)}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            // 검색 결과 표시
+                            if (searchResults) {
+                                searchResults.innerHTML = ''; // 이전 결과 초기화
+                                if (data.results) {
+                                    data.results.forEach(post => {
+                                        const postElement = document.createElement('div');
+                                        postElement.textContent = `${post.username}: ${post.description}`;
+                                        searchResults.appendChild(postElement);
+                                    });
+                                }
+                            }
+                        })
+                        .catch(error => {
+                            console.error('검색 중 오류 발생:', error);
+                        });
+                }
             }
         });
     }
 });
-
 
 function updateImagePreview() {
     const input = document.getElementById('imageInput');
