@@ -405,37 +405,18 @@ def get_feed_posts(request):
                 ui.is_official,
                 rm.file_name,
                 f.like_count,
-                f.feed_type
+                f.feed_type,
+                CASE WHEN fl.user_id IS NOT NULL THEN TRUE ELSE FALSE END as is_liked
             FROM FEED_INFO f
             LEFT JOIN FEED_DESC fd ON f.feed_id = fd.feed_id
             LEFT JOIN USER_INFO ui ON f.user_id = ui.user_id
             LEFT JOIN RankedMedia rm ON f.feed_id = rm.feed_id AND rm.rn = 1
+            LEFT JOIN FEED_LIKE fl ON f.feed_id = fl.feed_id AND fl.user_id = %s
             ORDER BY RAND();
-        """)
+        """, [request.user.id if request.user.is_authenticated else None])
         
         columns = [col[0] for col in cursor.description]
         feeds = [dict(zip(columns, row)) for row in cursor.fetchall()]
-        
-        # 로그인한 사용자의 좋아요 상태 확인
-        like_post = set()
-        if request.user.is_authenticated:
-            cursor.execute("""
-                SELECT feed_id FROM FEED_LIKE WHERE user_id = %s
-            """, [request.user.id])
-            like_post = {row[0] for row in cursor.fetchall()}
-        
-        for feed in feeds:
-            feed['isLiked'] = feed['feed_id'] in like_post
-            
-            # 각 게시물의 모든 미디어 파일 가져오기
-            cursor.execute("""
-                SELECT file_name, extension_type
-                FROM MEDIA_FILE
-                WHERE feed_id = %s
-            """, [feed['feed_id']])
-            media_files = cursor.fetchall()
-            feed['media_files'] = [{'file_name': file[0], 'extension_type': file[1]} for file in media_files]
-            feed['profile_image'] = f"/media/{feed['profile_image']}" if feed['profile_image'] else '/static/img/default_profile.png'
         
         return JsonResponse({'posts': feeds}, json_dumps_params={'ensure_ascii': False})
 
