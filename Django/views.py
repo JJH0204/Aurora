@@ -14,7 +14,6 @@ from datetime import datetime
 from django.db import transaction
 from functools import wraps
 from django.shortcuts import redirect
-import subprocess
 
 
 @csrf_exempt
@@ -56,9 +55,6 @@ def signup(request):
                 VALUES (%s, %s, %s)
             """, [user.id, email, password])  # 수정된 부분
 
-        # 회원가입 성공 후 DB 백업 실행
-        backup_database_to_sql()
-        
         return JsonResponse({'message': '회원가입이 완료되었습니다.'})
 
     except Exception as e:
@@ -341,7 +337,7 @@ def update_profile(request):
                     UPDATE USER_INFO 
                     SET username = %s,
                         bio = %s,  # bio 컬럼 업데이트 추가
-                        is_official = %s  # isOfficial 컬럼 업데이트 ��가
+                        is_official = %s  # isOfficial 컬럼 업데이트 추가
                     WHERE user_id = %s
                                
                 """, [username, bio,  is_official, request.user.id])  # isOfficial 추가
@@ -530,7 +526,9 @@ def search_posts(request):
             results = cursor.fetchall()
         
         # 결과를 JSON 형식으로 변환
+
         posts = [{'id': result[0], 'description': result[1], 'username': result[2], 'user_id': result[3], 'is_official': result[4], 'image': result[5]} for result in results]
+
         return JsonResponse({'results': posts})
     
     except Exception as e:
@@ -596,57 +594,3 @@ def get_media_files(request):
         print(f"Error fetching media files: {str(e)}")
         traceback.print_exc()
         return JsonResponse({'message': '파일 목록을 불러오는 중 오류가 발생했습니다.'}, status=500)
-
-def backup_database_to_sql():
-    try:
-        # MySQL 덤프 명령어 구성
-        backup_command = [
-            'mysqldump',
-            '-u', 'root',  # DB 사용자
-            'rootpassword',      # DB 비밀번호
-            'aurora_db',   # DB 이름
-            '--no-tablespaces'
-        ]
-        
-        # deploy_db.sql 파일 경로
-        backup_file = 'Maria/deploy_db.sql'
-        
-        # mysqldump 실행 및 결과를 파일에 저장
-        with open(backup_file, 'w') as f:
-            subprocess.run(backup_command, stdout=f)
-            
-        print(f"Database backup completed: {backup_file}")
-        return True
-    except Exception as e:
-        print(f"Backup failed: {str(e)}")
-        return False
-
-# 기존 게시물 업로드 함수 수정
-@csrf_exempt
-def upload_post(request):
-    if request.method == 'POST':
-        try:
-            # 기존 게시물 업로드 로직
-            # ... (기존 코드)
-
-            # 업로드 성공 후 DB 백업 실행
-            backup_database_to_sql()
-            
-            return JsonResponse({'status': 'success'})
-        except Exception as e:
-            return JsonResponse({'status': 'error', 'message': str(e)})
-
-# 회원가입 함수 수정
-@csrf_exempt
-def register(request):
-    if request.method == 'POST':
-        try:
-            # 기존 회원가입 로직
-            # ... (기존 코드)
-
-            # 회원가입 성공 후 DB 백업 실행
-            backup_database_to_sql()
-            
-            return JsonResponse({'status': 'success'})
-        except Exception as e:
-            return JsonResponse({'status': 'error', 'message': str(e)})
