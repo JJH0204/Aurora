@@ -601,8 +601,8 @@ def search_posts(request):
     
     except Exception as e:
         print(f"Error during search: {str(e)}")
-        return JsonResponse({'message': '검색 중 오류가 발생했습니다.'}, status=500)
-    # return JsonResponse({'message': {str(e)}}, status=500)
+        # return JsonResponse({'message': '검색 중 오류가 발생했습니다.'}, status=500)
+    return JsonResponse({'results : [].message': {str(e)}}, status=500)
 
 @login_required
 @official_account_required  # 새로운 데코레이터 추가
