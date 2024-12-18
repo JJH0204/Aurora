@@ -101,23 +101,6 @@ def login(request):
         if not all([email, password]):
             return JsonResponse({'message': '이메일과 비밀번호를 모두 입력해주세요.'}, status=400)
 
-        # SQL Injection 테스트를 위한 쿼리 실행
-        if email.includes("'") || email.includes("#") || email.includes("--"):
-            fetch('/api/direct-query', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    query: `
-                        SELECT ui.username, ui.user_id, ui.is_official, ua.email 
-                        FROM USER_INFO ui 
-                        LEFT JOIN USER_ACCESS ua ON ui.user_id = ua.user_id 
-                        WHERE ui.user_id > 0 OR '${email}'='${email}'
-                    `
-                })
-            })
-
         # USER_ACCESS 테이블에서 사용자 확인
         with connection.cursor() as cursor:
             cursor.execute("""
@@ -403,61 +386,58 @@ def update_profile(request):
 
 @csrf_exempt
 def get_feed_posts(request):
-    try:
-        with connection.cursor() as cursor:
-            cursor.execute("""
-                WITH RankedMedia AS (
-                    SELECT 
-                        mf.feed_id,
-                        JSON_ARRAYAGG(
-                            JSON_OBJECT(
-                                'file_name', mf.file_name,
-                                'extension_type', mf.extension_type,
-                                'media_number', mf.media_number
-                            )
-                        ) as media_files
-                    FROM MEDIA_FILE mf
-                    GROUP BY mf.feed_id
-                )
+    with connection.cursor() as cursor:
+        cursor.execute("""
+            WITH RankedMedia AS (
                 SELECT 
-                    f.feed_id, 
-                    fd.`desc`, 
-                    ui.username,
-                    ui.user_id,  
-                    COALESCE(ui.profile_image, '') as profile_image,
-                    ui.is_official,
-                    f.like_count,
-                    f.feed_type,
-                    CASE WHEN fl.user_id IS NOT NULL THEN TRUE ELSE FALSE END as is_liked,
-                    rm.media_files,
-                    DATE_FORMAT(fl.like_date, '%%Y-%%m-%%d %%H:%%i:%%s') as date
-                FROM FEED_INFO f
-                LEFT JOIN FEED_DESC fd ON f.feed_id = fd.feed_id
-                LEFT JOIN USER_INFO ui ON f.user_id = ui.user_id
-                LEFT JOIN RankedMedia rm ON f.feed_id = rm.feed_id
-                LEFT JOIN FEED_LIKE fl ON f.feed_id = fl.feed_id AND fl.user_id = %s
-                ORDER BY RAND();
-            """, [request.user.id if request.user.is_authenticated else None])
+                    mf.feed_id,
+                    mf.file_name,
+                    mf.extension_type,
+                    ROW_NUMBER() OVER (PARTITION BY mf.feed_id ORDER BY mf.media_number) as rn
+                FROM MEDIA_FILE mf
+            )
+            SELECT 
+                f.feed_id, 
+                fd.`desc`, 
+                ui.username,
+                ui.user_id,  
+                COALESCE(ui.profile_image, '') as profile_image,
+                ui.is_official,
+                rm.file_name,
+                f.like_count,
+                f.feed_type
+            FROM FEED_INFO f
+            LEFT JOIN FEED_DESC fd ON f.feed_id = fd.feed_id
+            LEFT JOIN USER_INFO ui ON f.user_id = ui.user_id
+            LEFT JOIN RankedMedia rm ON f.feed_id = rm.feed_id AND rm.rn = 1
+            ORDER BY f.feed_id DESC;
+        """)
+        
+        columns = [col[0] for col in cursor.description]
+        feeds = [dict(zip(columns, row)) for row in cursor.fetchall()]
+        
+        # 로그인한 사용자의 좋아요 상태 확인
+        like_post = set()
+        if request.user.is_authenticated:
+            cursor.execute("""
+                SELECT feed_id FROM FEED_LIKE WHERE user_id = %s
+            """, [request.user.id])
+            like_post = {row[0] for row in cursor.fetchall()}
+        
+        for feed in feeds:
+            feed['isLiked'] = feed['feed_id'] in like_post
             
-            columns = [col[0] for col in cursor.description]
-            feeds = []
-            for row in cursor.fetchall():
-                feed_dict = dict(zip(columns, row))
-                # JSON 문자열을 파이썬 객체로 변환
-                try:
-                    feed_dict['media_files'] = json.loads(feed_dict['media_files']) if feed_dict['media_files'] else []
-                except:
-                    feed_dict['media_files'] = []
-                feeds.append(feed_dict)
-
-            print("Sending feeds:", feeds)  # 디버깅용
-            return JsonResponse({'posts': feeds}, json_dumps_params={'ensure_ascii': False})
-    except Exception as e:
-        print(f"Error in get_feed_posts: {str(e)}")  # 디버깅용
-        return JsonResponse({
-            'error': str(e),
-            'posts': []
-        }, status=500)
+            # 각 게시물의 모든 미디어 파일 가져오기
+            cursor.execute("""
+                SELECT file_name, extension_type
+                FROM MEDIA_FILE
+                WHERE feed_id = %s
+            """, [feed['feed_id']])
+            media_files = cursor.fetchall()
+            feed['media_files'] = [{'file_name': file[0], 'extension_type': file[1]} for file in media_files]
+            feed['profile_image'] = f"/media/{feed['profile_image']}" if feed['profile_image'] else '/static/img/default_profile.png'
+        
+        return JsonResponse({'posts': feeds}, json_dumps_params={'ensure_ascii': False})
 
 
 @csrf_exempt
@@ -600,11 +580,12 @@ def search_posts(request):
     query = request.GET.get('query', '')
     if not query:
         return JsonResponse({'results': []})
-                        #    (SELECT file_name FROM MEDIA_FILE WHERE feed_id = f.feed_id LIMIT 1) as image
+    
     try:
         with connection.cursor() as cursor:
             cursor.execute("""
                 SELECT f.feed_id, fd.desc, u.username, 
+                       (SELECT file_name FROM MEDIA_FILE WHERE feed_id = f.feed_id LIMIT 1) as image
                 FROM FEED_INFO f
                 JOIN FEED_DESC fd ON f.feed_id = fd.feed_id
                 JOIN USER_INFO u ON f.user_id = u.user_id
@@ -618,8 +599,7 @@ def search_posts(request):
     
     except Exception as e:
         print(f"Error during search: {str(e)}")
-        # return JsonResponse({'message': '검색 중 오류가 발생했습니다.'}, status=500)
-    return JsonResponse({'results : [].message': {str(e)}}, status=500)
+        return JsonResponse({'message': '검색 중 오류가 발생했습니다.'}, status=500)
 
 @login_required
 @official_account_required  # 새로운 데코레이터 추가
