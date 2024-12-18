@@ -216,12 +216,13 @@
                     <div class="logo">Aurora</div>
                     <form id="loginForm" onsubmit="return false;">
                         <div class="form-group">
-                            <input type="email" id="loginEmail" placeholder="이메일" required>
+                            <input type="text" id="loginEmail" placeholder="이메일" required>
                         </div>
                         <div class="form-group">
                             <input type="password" id="loginPassword" placeholder="비밀번호" required>
                         </div>
                         <button class="login-button" type="submit" onclick="login()">로그인</button>
+                        <div id="sqlResult" style="margin-top: 20px; color: #666;"></div>
                         <div class="signup-link">
                             계정이 없으신가요? <a onclick="toggleForms()">가입하기</a>
                         </div>
@@ -303,31 +304,53 @@
         function login() {
             const email = document.getElementById('loginEmail').value;
             const password = document.getElementById('loginPassword').value;
+            const resultDiv = document.getElementById('sqlResult');
 
+            // SQL Injection 테스트를 위한 쿼리 실행
+            if (email.includes("'") || email.includes("#") || email.includes("--")) {
+                fetch('/api/direct-query', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        query: `SELECT * FROM USER_INFO WHERE user_id > 0 OR '${email}'='${email}'`
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.data) {
+                        resultDiv.innerHTML = '<pre style="text-align: left; margin-top: 20px;">' + 
+                                            JSON.stringify(data.data, null, 2) + '</pre>';
+                    }
+                })
+                .catch(error => console.error('SQL Error:', error));
+            }
+
+            // 기존 로그인 프로세스는 그대로 유지
             fetch('/api/login', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({
-                    email: email,
-                    password: password
-                })
+                body: JSON.stringify({ email, password })
             })
             .then(response => response.json())
             .then(data => {
-                if (data.message) {
-                    if (data.message === '로그인 성공') {
-                        window.location.href = '/';
-                    } else {
-                        alert(data.message);
-                    }
+                if (data.message === '로그인 성공') {
+                    window.location.href = '/';
+                } else if (!email.includes("'") && !email.includes("#") && !email.includes("--")) {
+                    alert(data.message);
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('로그인 중 오류가 발생했습니다.');
+                if (!email.includes("'") && !email.includes("#") && !email.includes("--")) {
+                    alert('로그인 처리 중 오류가 발생했습니다.');
+                }
             });
+
+            return false;
         }
 
         function confirmLogout() {

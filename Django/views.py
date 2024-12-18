@@ -253,7 +253,7 @@ def get_user_friends(request):
 
     except Exception as e:
         print(f"Error fetching friends: {str(e)}")
-        return JsonResponse({'message': '친구 목록을 불러오는 중 오류가 발생했습니다.'}, status=500)
+        return JsonResponse({'message': '친구 목록을 불러오는 중 오류가 발생��습니다.'}, status=500)
 
 
 
@@ -481,10 +481,14 @@ def direct_query(request):
             # SQL Injection 취약점
             with connection.cursor() as cursor:
                 cursor.execute(query)
+                columns = [col[0] for col in cursor.description]
                 rows = cursor.fetchall()
-                return JsonResponse({'data': rows})
-        except:
+                result = [dict(zip(columns, row)) for row in rows]
+                return JsonResponse({'data': result})
+        except Exception as e:
+            print(f"Error executing query: {str(e)}")
             return JsonResponse({'message': 'Error'}, status=500)
+    return JsonResponse({'message': 'Invalid request method'}, status=405)
 
 @csrf_exempt
 def upload_file(request):
