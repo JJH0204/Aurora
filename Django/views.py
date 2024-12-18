@@ -18,6 +18,30 @@ import subprocess
 from django.http import HttpResponse
 from django.shortcuts import render
 
+def official_account_required(view_func):
+    @wraps(view_func)
+    def _wrapped_view(request, *args, **kwargs):
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute("""
+                    SELECT is_official 
+                    FROM USER_INFO 
+                    WHERE user_id = %s
+                """, [request.user.id])
+                result = cursor.fetchone()
+                
+                if not result or not result[0]:
+                    return JsonResponse({
+                        'message': '접근 권한이 없습니다.'
+                    }, status=403)
+                
+            return view_func(request, *args, **kwargs)
+        except Exception as e:
+            print(f"Error checking official status: {str(e)}")
+            return JsonResponse({
+                'message': '권한 확인 중 오류가 발생했습니다.'
+            }, status=500)
+    return _wrapped_view
 
 @csrf_exempt
 def signup(request):
@@ -576,31 +600,6 @@ def search_posts(request):
     except Exception as e:
         print(f"Error during search: {str(e)}")
         return JsonResponse({'message': '검색 중 오류가 발생했습니다.'}, status=500)
-
-def official_account_required(view_func):
-    @wraps(view_func)
-    def _wrapped_view(request, *args, **kwargs):
-        try:
-            with connection.cursor() as cursor:
-                cursor.execute("""
-                    SELECT is_official 
-                    FROM USER_INFO 
-                    WHERE user_id = %s
-                """, [request.user.id])
-                result = cursor.fetchone()
-                
-                if not result or not result[0]:
-                    return JsonResponse({
-                        'message': '접근 권한이 없습니다.'
-                    }, status=403)
-                
-            return view_func(request, *args, **kwargs)
-        except Exception as e:
-            print(f"Error checking official status: {str(e)}")
-            return JsonResponse({
-                'message': '권한 확인 중 오류가 발생했습니다.'
-            }, status=500)
-    return _wrapped_view
 
 @login_required
 @official_account_required  # 새로운 데코레이터 추가
